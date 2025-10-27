@@ -15,6 +15,21 @@ use Illuminate\Http\Request as HttpRequest;
 
 class IdeaController extends Controller
 {
+    /**
+     * Flash a message with specified type
+     */
+    private function flashMessage(string $message, string $type = 'success')
+    {
+        return redirect()->back()->with($type, $message);
+    }
+
+    /**
+     * Flash a message and redirect to a specific route
+     */
+    private function flashMessageToRoute(string $route, string $message, array $params = [], string $type = 'success')
+    {
+        return redirect()->route($route, $params)->with($type, $message);
+    }
     // index, show, create, store, edit, update, destroy methods would go here
     public function index()
     {
@@ -124,7 +139,7 @@ class IdeaController extends Controller
             }
         }
 
-        return redirect()->route('ideas.index')->with('success', 'Idea created');
+        return $this->flashMessageToRoute('ideas.index', 'Idea created successfully!');
     }
 
     public function edit($slug)
@@ -232,7 +247,7 @@ class IdeaController extends Controller
             }
         }
 
-        return redirect()->route('ideas.show', $idea->slug)->with('success', 'Idea updated');
+        return $this->flashMessageToRoute('ideas.show', 'Idea updated successfully!', [$idea->slug]);
     }
 
     public function attachment($slug)
@@ -408,6 +423,6 @@ class IdeaController extends Controller
             'user_id' => Auth::id()
         ]);
 
-        return redirect()->back()->with('success', 'Comment added successfully');
+        return $this->flashMessage('Comment added successfully!');
     }
 }
