@@ -6,7 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ideasRoutes from '@/routes/ideas';
 import { BreadcrumbItem } from '@/types';
 import { toast } from 'react-toastify';
-import { persistentToast } from '@/lib/persistent-toast';
 
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -103,10 +102,10 @@ export default function Create() {
         form.post('/ideas', {
             preserveScroll: true,
             onSuccess: () => {
-                persistentToast.success('Idea created successfully!');
+                toast.success('Idea created successfully!');
             },
             onError: () => {
-                persistentToast.error('Failed to create idea. Please check your input and try again.');
+                toast.error('Failed to create idea. Please check your input and try again.');
             },
             onFinish: () => {},
         });

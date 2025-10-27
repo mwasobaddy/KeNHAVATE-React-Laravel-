@@ -18,7 +18,6 @@ import DeleteModal from '@/components/DeleteModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'react-toastify';
-import { persistentToast } from '@/lib/persistent-toast';
 
 interface Idea {
     id: number;
@@ -154,13 +153,13 @@ export default function Index() {
             const res = await fetch('/ideas/delete-selected', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '' }, body: JSON.stringify({ ids }) });
             if (res.ok) {
                 router.reload();
-                persistentToast.success(`${ids.length} idea${ids.length > 1 ? 's' : ''} deleted successfully!`);
+                toast.success(`${ids.length} idea${ids.length > 1 ? 's' : ''} deleted successfully!`);
             } else {
-                persistentToast.error('Failed to delete selected ideas. Please try again.');
+                toast.error('Failed to delete selected ideas. Please try again.');
                 console.warn('confirmBulkDelete returned', res.status);
             }
         } catch (e) {
-            persistentToast.error('Failed to delete selected ideas. Please try again.');
+            toast.error('Failed to delete selected ideas. Please try again.');
             console.error(e);
         } finally {
             setBulkDeleteOpen(false);
@@ -179,13 +178,13 @@ export default function Index() {
             const res = await fetch(`/ideas/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '' } });
             if (res.ok) {
                 router.reload();
-                persistentToast.success('Idea deleted successfully!');
+                toast.success('Idea deleted successfully!');
             } else {
-                persistentToast.error('Failed to delete idea. Please try again.');
+                toast.error('Failed to delete idea. Please try again.');
                 console.warn('deleteIdea returned', res.status);
             }
         } catch (e) {
-            persistentToast.error('Failed to delete idea. Please try again.');
+            toast.error('Failed to delete idea. Please try again.');
             console.error(e);
         } finally {
             setSingleDeleteOpen(false);
@@ -210,13 +209,13 @@ export default function Index() {
                 // reconcile server state
                 setLikedMap((m2) => ({ ...m2, [id]: !!data.liked }));
                 setLikesMap((c2) => ({ ...c2, [id]: data.likes_count }));
-                persistentToast.success(data.liked ? 'Idea liked!' : 'Like removed!');
+                toast.success(data.liked ? 'Idea liked!' : 'Like removed!');
             })
             .catch((err) => {
                 // rollback optimistic change on error
                 setLikedMap((m2) => ({ ...m2, [id]: currentLiked }));
                 setLikesMap((c2) => ({ ...c2, [id]: currentCount }));
-                persistentToast.error('Failed to toggle like. Please try again.');
+                toast.error('Failed to toggle like. Please try again.');
                 console.error('Failed to toggle like', err);
             });
     }
@@ -236,12 +235,12 @@ export default function Index() {
                 const data = await res.json();
                 // reconcile server state
                 setCollaborationMap((m2) => ({ ...m2, [id]: !!data.collaboration_enabled }));
-                persistentToast.success(data.collaboration_enabled ? 'Collaboration enabled!' : 'Collaboration disabled!');
+                toast.success(data.collaboration_enabled ? 'Collaboration enabled!' : 'Collaboration disabled!');
             })
             .catch((err) => {
                 // rollback optimistic change on error
                 setCollaborationMap((m2) => ({ ...m2, [id]: currentEnabled }));
-                persistentToast.error('Failed to toggle collaboration. Please try again.');
+                toast.error('Failed to toggle collaboration. Please try again.');
                 console.error('Failed to toggle collaboration', err);
             });
     }
@@ -261,12 +260,12 @@ export default function Index() {
                 const data = await res.json();
                 // reconcile server state
                 setCommentsMap((m2) => ({ ...m2, [id]: !!data.comments_enabled }));
-                persistentToast.success(data.comments_enabled ? 'Comments enabled!' : 'Comments disabled!');
+                toast.success(data.comments_enabled ? 'Comments enabled!' : 'Comments disabled!');
             })
             .catch((err) => {
                 // rollback optimistic change on error
                 setCommentsMap((m2) => ({ ...m2, [id]: currentEnabled }));
-                persistentToast.error('Failed to toggle comments. Please try again.');
+                toast.error('Failed to toggle comments. Please try again.');
                 console.error('Failed to toggle comments', err);
             });
     }

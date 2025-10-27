@@ -6,7 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BreadcrumbItem } from '@/types';
 import ideasRoutes from '@/routes/ideas';
 import { toast } from 'react-toastify';
-import { persistentToast } from '@/lib/persistent-toast';
 
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -138,10 +137,10 @@ export default function Edit() {
         form.patch(`/ideas/${idea.slug}`, {
             preserveScroll: true,
             onSuccess: () => {
-                persistentToast.success('Idea updated successfully!');
+                toast.success('Idea updated successfully!');
             },
             onError: () => {
-                persistentToast.error('Failed to update idea. Please check your input and try again.');
+                toast.error('Failed to update idea. Please check your input and try again.');
             },
             onFinish: () => {},
         });
