@@ -425,4 +425,66 @@ class IdeaController extends Controller
 
         return $this->flashMessage('Comment added successfully!');
     }
+
+    public function updateComment(Request $request, $slug, $commentId)
+    {
+        $idea = Idea::where('slug', $slug)->first();
+        if (!$idea) {
+            return response()->json(['message' => 'Idea not found'], 404);
+        }
+
+        $comment = $idea->comments()->find($commentId);
+        if (!$comment) {
+            return response()->json(['message' => 'Comment not found'], 404);
+        }
+
+        // Check if user owns the comment
+        if ($comment->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $request->validate([
+            'content' => 'required|string|max:1000',
+        ]);
+
+        $comment->update([
+            'content' => $request->content,
+        ]);
+
+        Log::info('Comment updated', [
+            'idea_id' => $idea->id,
+            'comment_id' => $comment->id,
+            'user_id' => Auth::id()
+        ]);
+
+        return response()->json(['message' => 'Comment updated successfully']);
+    }
+
+    public function destroyComment($slug, $commentId)
+    {
+        $idea = Idea::where('slug', $slug)->first();
+        if (!$idea) {
+            return response()->json(['message' => 'Idea not found'], 404);
+        }
+
+        $comment = $idea->comments()->find($commentId);
+        if (!$comment) {
+            return response()->json(['message' => 'Comment not found'], 404);
+        }
+
+        // Check if user owns the comment
+        if ($comment->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $comment->delete();
+
+        Log::info('Comment deleted', [
+            'idea_id' => $idea->id,
+            'comment_id' => $comment->id,
+            'user_id' => Auth::id()
+        ]);
+
+        return response()->json(['message' => 'Comment deleted successfully']);
+    }
 }

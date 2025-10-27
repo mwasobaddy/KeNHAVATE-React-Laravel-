@@ -30,6 +30,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('ideas/{idea}/toggle-comments', [IdeaController::class, 'toggleComment'])->name('ideas.toggle-comments');
     Route::get('ideas/{slug}/comments', [IdeaController::class, 'comments'])->name('ideas.comments');
     Route::post('ideas/{slug}/comments', [IdeaController::class, 'storeComment'])->name('ideas.comments.store');
+    Route::patch('ideas/{slug}/comments/{comment}', [IdeaController::class, 'updateComment'])->name('ideas.comments.update');
+    Route::delete('ideas/{slug}/comments/{comment}', [IdeaController::class, 'destroyComment'])->name('ideas.comments.destroy');
     Route::delete('ideas/{idea}', [IdeaController::class, 'destroy'])->name('ideas.destroy');
     Route::post('ideas/delete-selected', [IdeaController::class, 'destroySelected'])->name('ideas.destroy-selected');
 });

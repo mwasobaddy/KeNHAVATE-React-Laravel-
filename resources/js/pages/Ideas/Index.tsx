@@ -481,10 +481,6 @@ export default function Index() {
                                                     <FileText className="h-4 w-4" />
                                                     PDF
                                                 </a>
-                                                <Link className="items-center gap-2 p-4 sm:px-4 sm:py-2 bg-gray-950 text-white hover:bg-gray-800 dark:bg-gray-200 dark:text-black hover:dark:bg-gray-400 rounded-lg text-sm font-medium shadow-md hover:shadow-lg hidden lg:flex transition-all duration-300">
-                                                    <Power className="h-4 w-4" />
-                                                    Toggle
-                                                </Link>
 
                                                 <div className="relative lg:hidden">
                                                     <DropdownMenu>
@@ -519,12 +515,6 @@ export default function Index() {
                                                                     <FileText className="h-4 w-4 text-white dark:text-black" />
                                                                     PDF
                                                                 </a>
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem asChild>
-                                                                <Link href="#" className="w-full text-left flex items-center px-4 py-2">
-                                                                    <Power className="h-4 w-4 text-white dark:text-black" />
-                                                                    Toggle Collaboration
-                                                                </Link>
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>

@@ -1,9 +1,11 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import ideasRoutes from '@/routes/ideas';
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { toast } from 'react-toastify';
+import DeleteModal from '@/components/DeleteModal';
 import {
     ArrowLeft,
     MessageSquare,
@@ -14,7 +16,11 @@ import {
     Home,
     Lightbulb,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    Edit2,
+    Trash2,
+    X,
+    Check
 } from 'lucide-react';
 
 interface Idea {
@@ -66,11 +72,19 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Comments({ idea, comments }: Props) {
+    const { auth } = usePage().props as any;
+    const currentUser = auth?.user;
+
     const form = useForm({
         content: '',
     });
 
     const [clientError, setClientError] = useState<string | null>(null);
+    const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+    const [editContent, setEditContent] = useState('');
+    const [editError, setEditError] = useState<string | null>(null);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
@@ -87,6 +101,89 @@ export default function Comments({ idea, comments }: Props) {
                 form.reset();
             },
         });
+    }
+
+    function startEditing(comment: Comment) {
+        setEditingCommentId(comment.id);
+        setEditContent(comment.content);
+        setEditError(null);
+    }
+
+    function cancelEditing() {
+        setEditingCommentId(null);
+        setEditContent('');
+        setEditError(null);
+    }
+
+    async function submitEdit(commentId: number) {
+        if (!editContent.trim()) {
+            setEditError('Comment cannot be empty');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/ideas/${idea.slug}/comments/${commentId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                },
+                body: JSON.stringify({ content: editContent }),
+            });
+
+            if (response.ok) {
+                setEditingCommentId(null);
+                setEditContent('');
+                toast.success('Comment updated successfully!');
+                // Reload the page to show updated comments
+                router.reload();
+            } else {
+                toast.error('Failed to update comment. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error updating comment:', error);
+            toast.error('Failed to update comment. Please try again.');
+        }
+    }
+
+    function deleteComment(commentId: number) {
+        setCommentToDelete(commentId);
+        setDeleteModalOpen(true);
+    }
+
+    async function confirmDelete() {
+        if (!commentToDelete) return;
+
+        try {
+            const response = await fetch(`/ideas/${idea.slug}/comments/${commentToDelete}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                },
+            });
+
+            if (response.ok) {
+                setDeleteModalOpen(false);
+                setCommentToDelete(null);
+                toast.success('Comment deleted successfully!');
+                // Reload the page to show updated comments
+                router.reload();
+            } else {
+                setDeleteModalOpen(false);
+                setCommentToDelete(null);
+                toast.error('Failed to delete comment. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+            setDeleteModalOpen(false);
+            setCommentToDelete(null);
+            toast.error('Failed to delete comment. Please try again.');
+        }
+    }
+
+    function cancelDelete() {
+        setDeleteModalOpen(false);
+        setCommentToDelete(null);
     }
 
     return (
@@ -251,20 +348,83 @@ export default function Comments({ idea, comments }: Props) {
                                             className="h-10 w-10 rounded-full object-cover flex-shrink-0" />
 
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="font-semibold text-[#231F20] dark:text-white">{comment.user.name}</span>
-                                                <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                                    <Calendar className="h-3 w-3" />
-                                                    {new Date(comment.created_at).toLocaleDateString('en-US', {
-                                                        year: 'numeric',
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    })}
-                                                </span>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-semibold text-[#231F20] dark:text-white">{comment.user.name}</span>
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                                        <Calendar className="h-3 w-3" />
+                                                        {new Date(comment.created_at).toLocaleDateString('en-US', {
+                                                            year: 'numeric',
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </span>
+                                                </div>
+
+                                                {/* Edit/Delete buttons for comment owner */}
+                                                {currentUser && currentUser.id === comment.user.id && (
+                                                    <div className="flex items-center gap-1">
+                                                        {editingCommentId === comment.id ? (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => submitEdit(comment.id)}
+                                                                    className="p-1 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
+                                                                    title="Save changes"
+                                                                >
+                                                                    <Check className="h-4 w-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={cancelEditing}
+                                                                    className="p-1 text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                                                    title="Cancel editing"
+                                                                >
+                                                                    <X className="h-4 w-4" />
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => startEditing(comment)}
+                                                                    className="p-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                                                                    title="Edit comment"
+                                                                >
+                                                                    <Edit2 className="h-4 w-4" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => deleteComment(comment.id)}
+                                                                    className="p-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                                                    title="Delete comment"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
-                                            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{comment.content}</p>
+
+                                            {/* Comment content or edit form */}
+                                            {editingCommentId === comment.id ? (
+                                                <div className="space-y-2">
+                                                    <textarea
+                                                        value={editContent}
+                                                        onChange={(e) => setEditContent(e.target.value)}
+                                                        className="w-full px-3 py-2 rounded-xl border border-[#9B9EA4]/30 text-sm bg-white/80 dark:bg-gray-900/50 text-[#231F20] dark:text-[#F8EBD5] resize-none"
+                                                        rows={3}
+                                                        placeholder="Edit your comment..."
+                                                    />
+                                                    {editError && (
+                                                        <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                                                            <AlertCircle className="h-4 w-4" />
+                                                            {editError}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{comment.content}</p>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -272,6 +432,16 @@ export default function Comments({ idea, comments }: Props) {
                         )}
                     </div>
                 </div>
+
+                {/* Delete Confirmation Modal */}
+                <DeleteModal
+                    open={deleteModalOpen}
+                    title="Delete Comment"
+                    body="Are you sure you want to delete this comment? This action cannot be undone."
+                    confirmLabel="Delete Comment"
+                    onCancel={cancelDelete}
+                    onConfirm={confirmDelete}
+                />
             </div>
         </AppLayout>
     );
