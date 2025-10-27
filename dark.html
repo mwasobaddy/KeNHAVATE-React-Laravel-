@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Design System - Light & Dark Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom brand colors */
+        .bg-brand-yellow { background-color: #fff200; }
+        .bg-brand-cream { background-color: #F8EBD5; }
+        .bg-brand-black { background-color: #231F20; }
+        .bg-brand-gray { background-color: #9B9EA4; }
+        .text-brand-yellow { color: #fff200; }
+        .text-brand-cream { color: #F8EBD5; }
+        .text-brand-black { color: #231F20; }
+        .text-brand-gray { color: #9B9EA4; }
+        .border-brand-yellow { border-color: #fff200; }
+        .border-brand-cream { border-color: #F8EBD5; }
+        .border-brand-black { border-color: #231F20; }
+        .border-brand-gray { border-color: #9B9EA4; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Toggle Button -->
+    <div class="fixed top-4 right-4 z-50">
+        <button id="themeToggle" class="px-6 py-3 rounded-full font-semibold shadow-lg transition-all duration-300 backdrop-blur-md bg-white/20 border-2 border-white/30 hover:scale-105">
+            <span id="toggleText">Switch to Dark Mode</span>
+        </button>
+    </div>
+
+    <!-- Light Mode Design -->
+    <div id="lightMode" class="min-h-screen bg-brand-cream">
+        <div class="container mx-auto px-6 py-12">
+            <!-- Header Section -->
+            <header class="mb-16">
+                <div class="backdrop-blur-md bg-white/40 border-2 border-brand-yellow rounded-3xl p-8 shadow-2xl">
+                    <h1 class="text-5xl font-bold text-brand-black mb-4">Brand Design System</h1>
+                    <p class="text-xl text-brand-black/80">Showcasing the 60-30-10 rule in light mode</p>
+                </div>
+            </header>
+
+            <!-- Stats Cards (60% Cream, 30% Yellow, 10% Black accents) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="backdrop-blur-lg bg-white/60 border border-brand-gray/30 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-brand-yellow rounded-full flex items-center justify-center mb-4">
+                        <span class="text-2xl text-brand-black font-bold">1</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-brand-black mb-2">1,234</h3>
+                    <p class="text-brand-gray">Total Projects</p>
+                </div>
+
+                <div class="backdrop-blur-lg bg-brand-yellow/90 border-2 border-brand-black rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-brand-black rounded-full flex items-center justify-center mb-4">
+                        <span class="text-2xl text-brand-yellow font-bold">2</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-brand-black mb-2">89%</h3>
+                    <p class="text-brand-black/70">Success Rate</p>
+                </div>
+
+                <div class="backdrop-blur-lg bg-white/60 border border-brand-gray/30 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-brand-yellow rounded-full flex items-center justify-center mb-4">
+                        <span class="text-2xl text-brand-black font-bold">3</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-brand-black mb-2">567</h3>
+                    <p class="text-brand-gray">Active Users</p>
+                </div>
+            </div>
+
+            <!-- Feature Cards with Glassmorphism -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                <div class="backdrop-blur-xl bg-white/50 border border-brand-yellow/50 rounded-3xl p-8 shadow-xl">
+                    <div class="bg-brand-yellow w-16 h-16 rounded-2xl flex items-center justify-center mb-6">
+                        <svg class="w-8 h-8 text-brand-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-brand-black mb-4">Lightning Fast</h3>
+                    <p class="text-brand-gray leading-relaxed">Experience blazing performance with our optimized infrastructure designed for speed and reliability.</p>
+                </div>
+
+                <div class="backdrop-blur-xl bg-white/50 border border-brand-yellow/50 rounded-3xl p-8 shadow-xl">
+                    <div class="bg-brand-black w-16 h-16 rounded-2xl flex items-center justify-center mb-6">
+                        <svg class="w-8 h-8 text-brand-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-brand-black mb-4">Secure by Default</h3>
+                    <p class="text-brand-gray leading-relaxed">Your data is protected with enterprise-grade security measures and encryption protocols.</p>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="backdrop-blur-lg bg-white/60 border border-brand-gray/30 rounded-3xl p-8 shadow-xl">
+                <h2 class="text-3xl font-bold text-brand-black mb-6">Recent Activity</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b-2 border-brand-yellow">
+                                <th class="text-left py-4 px-4 text-brand-black font-bold">Project</th>
+                                <th class="text-left py-4 px-4 text-brand-black font-bold">Status</th>
+                                <th class="text-left py-4 px-4 text-brand-black font-bold">Progress</th>
+                                <th class="text-left py-4 px-4 text-brand-black font-bold">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-brand-gray/20 hover:bg-brand-yellow/20 transition-colors">
+                                <td class="py-4 px-4 text-brand-black font-medium">Website Redesign</td>
+                                <td class="py-4 px-4"><span class="bg-brand-yellow text-brand-black px-3 py-1 rounded-full text-sm font-semibold">Active</span></td>
+                                <td class="py-4 px-4"><div class="w-full bg-brand-gray/30 rounded-full h-2"><div class="bg-brand-yellow h-2 rounded-full" style="width: 75%"></div></div></td>
+                                <td class="py-4 px-4 text-brand-gray">Oct 23, 2025</td>
+                            </tr>
+                            <tr class="border-b border-brand-gray/20 hover:bg-brand-yellow/20 transition-colors">
+                                <td class="py-4 px-4 text-brand-black font-medium">Mobile App</td>
+                                <td class="py-4 px-4"><span class="bg-brand-black text-brand-yellow px-3 py-1 rounded-full text-sm font-semibold">Review</span></td>
+                                <td class="py-4 px-4"><div class="w-full bg-brand-gray/30 rounded-full h-2"><div class="bg-brand-black h-2 rounded-full" style="width: 90%"></div></div></td>
+                                <td class="py-4 px-4 text-brand-gray">Oct 22, 2025</td>
+                            </tr>
+                            <tr class="hover:bg-brand-yellow/20 transition-colors">
+                                <td class="py-4 px-4 text-brand-black font-medium">Brand Guidelines</td>
+                                <td class="py-4 px-4"><span class="bg-white text-brand-black border border-brand-gray px-3 py-1 rounded-full text-sm font-semibold">Pending</span></td>
+                                <td class="py-4 px-4"><div class="w-full bg-brand-gray/30 rounded-full h-2"><div class="bg-brand-gray h-2 rounded-full" style="width: 45%"></div></div></td>
+                                <td class="py-4 px-4 text-brand-gray">Oct 20, 2025</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dark Mode Design -->
+    <div id="darkMode" class="hidden min-h-screen bg-brand-black">
+        <div class="container mx-auto px-6 py-12">
+            <!-- Header Section -->
+            <header class="mb-16">
+                <div class="backdrop-blur-md bg-white/5 border-2 border-brand-yellow rounded-3xl p-8 shadow-2xl">
+                    <h1 class="text-5xl font-bold text-brand-yellow mb-4">Brand Design System</h1>
+                    <p class="text-xl text-brand-cream/80">Showcasing the 60-30-10 rule in dark mode</p>
+                </div>
+            </header>
+
+            <!-- Stats Cards (60% Black, 30% Yellow, 10% Cream accents) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="backdrop-blur-lg bg-white/10 border border-brand-gray/30 rounded-2xl p-6 shadow-lg hover:shadow-2xl hover:shadow-brand-yellow/20 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-brand-yellow rounded-full flex items-center justify-center mb-4">
+                        <span class="text-2xl text-brand-black font-bold">1</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">1,234</h3>
+                    <p class="text-brand-gray">Total Projects</p>
+                </div>
+
+                <div class="backdrop-blur-lg bg-brand-yellow/90 border-2 border-brand-yellow rounded-2xl p-6 shadow-lg hover:shadow-2xl hover:shadow-brand-yellow/40 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-brand-black rounded-full flex items-center justify-center mb-4">
+                        <span class="text-2xl text-brand-yellow font-bold">2</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-brand-black mb-2">89%</h3>
+                    <p class="text-brand-black/70">Success Rate</p>
+                </div>
+
+                <div class="backdrop-blur-lg bg-white/10 border border-brand-gray/30 rounded-2xl p-6 shadow-lg hover:shadow-2xl hover:shadow-brand-yellow/20 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 bg-brand-yellow rounded-full flex items-center justify-center mb-4">
+                        <span class="text-2xl text-brand-black font-bold">3</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-2">567</h3>
+                    <p class="text-brand-gray">Active Users</p>
+                </div>
+            </div>
+
+            <!-- Feature Cards with Glassmorphism -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                <div class="backdrop-blur-xl bg-white/5 border border-brand-yellow/30 rounded-3xl p-8 shadow-xl hover:shadow-2xl hover:shadow-brand-yellow/10 transition-all duration-300">
+                    <div class="bg-brand-yellow w-16 h-16 rounded-2xl flex items-center justify-center mb-6">
+                        <svg class="w-8 h-8 text-brand-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-brand-cream mb-4">Lightning Fast</h3>
+                    <p class="text-brand-gray leading-relaxed">Experience blazing performance with our optimized infrastructure designed for speed and reliability.</p>
+                </div>
+
+                <div class="backdrop-blur-xl bg-white/5 border border-brand-yellow/30 rounded-3xl p-8 shadow-xl hover:shadow-2xl hover:shadow-brand-yellow/10 transition-all duration-300">
+                    <div class="bg-brand-cream w-16 h-16 rounded-2xl flex items-center justify-center mb-6">
+                        <svg class="w-8 h-8 text-brand-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-brand-cream mb-4">Secure by Default</h3>
+                    <p class="text-brand-gray leading-relaxed">Your data is protected with enterprise-grade security measures and encryption protocols.</p>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="backdrop-blur-lg bg-white/5 border border-brand-gray/20 rounded-3xl p-8 shadow-xl">
+                <h2 class="text-3xl font-bold text-brand-yellow mb-6">Recent Activity</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b-2 border-brand-yellow">
+                                <th class="text-left py-4 px-4 text-brand-cream font-bold">Project</th>
+                                <th class="text-left py-4 px-4 text-brand-cream font-bold">Status</th>
+                                <th class="text-left py-4 px-4 text-brand-cream font-bold">Progress</th>
+                                <th class="text-left py-4 px-4 text-brand-cream font-bold">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-brand-gray/20 hover:bg-brand-yellow/10 transition-colors">
+                                <td class="py-4 px-4 text-white font-medium">Website Redesign</td>
+                                <td class="py-4 px-4"><span class="bg-brand-yellow text-brand-black px-3 py-1 rounded-full text-sm font-semibold">Active</span></td>
+                                <td class="py-4 px-4"><div class="w-full bg-brand-gray/30 rounded-full h-2"><div class="bg-brand-yellow h-2 rounded-full" style="width: 75%"></div></div></td>
+                                <td class="py-4 px-4 text-brand-gray">Oct 23, 2025</td>
+                            </tr>
+                            <tr class="border-b border-brand-gray/20 hover:bg-brand-yellow/10 transition-colors">
+                                <td class="py-4 px-4 text-white font-medium">Mobile App</td>
+                                <td class="py-4 px-4"><span class="bg-brand-cream text-brand-black px-3 py-1 rounded-full text-sm font-semibold">Review</span></td>
+                                <td class="py-4 px-4"><div class="w-full bg-brand-gray/30 rounded-full h-2"><div class="bg-brand-cream h-2 rounded-full" style="width: 90%"></div></div></td>
+                                <td class="py-4 px-4 text-brand-gray">Oct 22, 2025</td>
+                            </tr>
+                            <tr class="hover:bg-brand-yellow/10 transition-colors">
+                                <td class="py-4 px-4 text-white font-medium">Brand Guidelines</td>
+                                <td class="py-4 px-4"><span class="bg-white/10 text-brand-cream border border-brand-gray px-3 py-1 rounded-full text-sm font-semibold">Pending</span></td>
+                                <td class="py-4 px-4"><div class="w-full bg-brand-gray/30 rounded-full h-2"><div class="bg-brand-gray h-2 rounded-full" style="width: 45%"></div></div></td>
+                                <td class="py-4 px-4 text-brand-gray">Oct 20, 2025</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const toggleText = document.getElementById('toggleText');
+        const lightMode = document.getElementById('lightMode');
+        const darkMode = document.getElementById('darkMode');
+        let isDark = false;
+
+        themeToggle.addEventListener('click', () => {
+            isDark = !isDark;
+            if (isDark) {
+                lightMode.classList.add('hidden');
+                darkMode.classList.remove('hidden');
+                toggleText.textContent = 'Switch to Light Mode';
+            } else {
+                darkMode.classList.add('hidden');
+                lightMode.classList.remove('hidden');
+                toggleText.textContent = 'Switch to Dark Mode';
+            }
+        });
+    </script>
+</body>
+</html>
