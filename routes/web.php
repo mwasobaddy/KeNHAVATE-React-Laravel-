@@ -24,9 +24,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('ideas/{slug}/view', [IdeaController::class, 'show'])->name('ideas.show');
     Route::get('ideas/{slug}/attachment', [IdeaController::class, 'attachment'])->name('ideas.attachment');
     Route::get('ideas/{slug}/edit', [IdeaController::class, 'edit'])->name('ideas.edit');
-    Route::put('ideas/{slug}', [IdeaController::class, 'update'])->name('ideas.update');
+    Route::patch('ideas/{slug}', [IdeaController::class, 'update'])->name('ideas.update');
     Route::post('ideas/{idea}/toggle-like', [IdeaLikeController::class, 'toggle'])->name('ideas.toggle-like');
     Route::post('ideas/{idea}/toggle-collaboration', [IdeaController::class, 'toggleCollaboration'])->name('ideas.toggle-collaboration');
+    Route::post('ideas/{idea}/toggle-comments', [IdeaController::class, 'toggleComment'])->name('ideas.toggle-comments');
     Route::get('ideas/{slug}/comments', [IdeaController::class, 'comments'])->name('ideas.comments');
     Route::post('ideas/{slug}/comments', [IdeaController::class, 'storeComment'])->name('ideas.comments.store');
     Route::delete('ideas/{idea}', [IdeaController::class, 'destroy'])->name('ideas.destroy');
