@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\Idea\IdeaController;
 use App\Http\Controllers\Idea\IdeaLikeController;
+use App\Http\Controllers\CollaborationController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -35,6 +36,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('ideas/{slug}/comments/{comment}', [IdeaController::class, 'destroyComment'])->name('ideas.comments.destroy');
     Route::delete('ideas/{idea}', [IdeaController::class, 'destroy'])->name('ideas.destroy');
     Route::post('ideas/delete-selected', [IdeaController::class, 'destroySelected'])->name('ideas.destroy-selected');
+
+    // Collaboration routes
+    Route::get('collaboration', [CollaborationController::class, 'index'])->name('collaboration.index');
+    Route::post('collaboration/{ideaSlug}/request', [CollaborationController::class, 'sendRequest'])->name('collaboration.request');
+    Route::delete('collaboration/requests/{requestId}', [CollaborationController::class, 'cancelRequest'])->name('collaboration.cancel');
+    Route::get('collaboration/inbox', [CollaborationController::class, 'inbox'])->name('collaboration.inbox');
+    Route::get('collaboration/outbox', [CollaborationController::class, 'outbox'])->name('collaboration.outbox');
+    Route::post('collaboration/requests/{requestId}/respond', [CollaborationController::class, 'respond'])->name('collaboration.respond');
 });
 
 require __DIR__.'/settings.php';
