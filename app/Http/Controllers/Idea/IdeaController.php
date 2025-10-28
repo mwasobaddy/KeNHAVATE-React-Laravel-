@@ -67,7 +67,7 @@ class IdeaController extends Controller
     {
         $idea = Idea::with('user', 'teamMembers', 'thematicArea')->withCount(['teamMembers', 'collaborationMembers', 'likes'])->where('slug', $slug)->first();
         if (!$idea) {
-            return response()->json(['message' => 'Idea not found'], 404);
+            return $this->flashMessageToRoute('ideas.index', 'Idea not found.', [], 'error');
         }
         return Inertia::render('Ideas/Show', compact('idea'));
     }
@@ -146,11 +146,11 @@ class IdeaController extends Controller
     {
         $idea = Idea::with('teamMembers', 'thematicArea')->withCount(['teamMembers', 'collaborationMembers', 'likes'])->where('slug', $slug)->first();
         if (!$idea) {
-            return response()->json(['message' => 'Idea not found'], 404);
+            return $this->flashMessageToRoute('ideas.index', 'Idea not found.', [], 'error');
         }
         // Check ownership
         if ($idea->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Forbidden'], 403);
+            return $this->flashMessageToRoute('ideas.index', 'You do not have permission to edit this idea.', [], 'error');
         }
         $thematicAreas = ThematicArea::active()->ordered()->get(['id', 'name']);
         return Inertia::render('Ideas/Edit', compact('idea', 'thematicAreas'));
@@ -181,7 +181,6 @@ class IdeaController extends Controller
             'comments_enabled' => 'boolean',
             'collaboration_deadline' => 'required_if:collaboration_enabled,true|nullable|date',
             'attachment' => 'nullable|file|mimes:pdf|max:5120',
-            'remove_attachment' => 'boolean',
             'team_members' => 'required_if:team_effort,true|array|min:1',
             'team_members.*.name' => 'required|string|max:255',
             'team_members.*.email' => 'required|email|max:255',
@@ -209,7 +208,7 @@ class IdeaController extends Controller
                 'max:5120',
                 function ($attribute, $value, $fail) use ($idea, $request) {
                     // Require attachment if no existing attachment and not removing
-                    if (!$idea->attachment_filename && !$request->hasFile('attachment') && !$request->remove_attachment) {
+                    if (!$idea->attachment_filename && !$request->hasFile('attachment')) {
                         $fail('The attachment field is required.');
                     }
                 },
@@ -223,12 +222,6 @@ class IdeaController extends Controller
             $validated['attachment_filename'] = $file->getClientOriginalName();
             $validated['attachment_mime'] = $file->getClientMimeType();
             $validated['attachment_size'] = $file->getSize();
-        } elseif ($request->remove_attachment) {
-            // Remove existing attachment
-            $validated['attachment'] = null;
-            $validated['attachment_filename'] = null;
-            $validated['attachment_mime'] = null;
-            $validated['attachment_size'] = null;
         }
 
         // update idea
@@ -248,6 +241,29 @@ class IdeaController extends Controller
         }
 
         return $this->flashMessageToRoute('ideas.show', 'Idea updated successfully!', [$idea->slug]);
+    }
+
+    public function removeAttachment(Request $request, $slug)
+    {
+        $idea = Idea::where('slug', $slug)->first();
+        if (!$idea) {
+            return response()->json(['message' => 'Idea not found'], 404);
+        }
+        
+        // Check ownership
+        if ($idea->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        // Remove attachment
+        $idea->update([
+            'attachment' => null,
+            'attachment_filename' => null,
+            'attachment_mime' => null,
+            'attachment_size' => null,
+        ]);
+
+        return response()->json(['message' => 'Attachment removed successfully']);
     }
 
     public function attachment($slug)
@@ -376,7 +392,7 @@ class IdeaController extends Controller
     {
         $idea = Idea::with('user')->where('slug', $slug)->first();
         if (!$idea) {
-            return response()->json(['message' => 'Idea not found'], 404);
+            return $this->flashMessageToRoute('ideas.index', 'The idea you are looking for does not exist.', [], 'error');
         }
 
         // Check if comments are enabled
@@ -384,14 +400,27 @@ class IdeaController extends Controller
             // Still allow viewing if user is the owner or admin
             $user = Auth::user();
             if ($idea->user_id !== $user->id && (!$user->role || $user->role !== 'admin')) {
-                return response()->json(['message' => 'Comments are disabled for this idea'], 403);
+                return $this->flashMessageToRoute('ideas.index', 'Comments are disabled for this idea.', [], 'error');
             }
         }
 
         $comments = $idea->comments()->with('user')->orderBy('created_at', 'desc')->get();
 
+        // Format idea data to match frontend expectations
+        $ideaData = [
+            'id' => $idea->id,
+            'title' => $idea->idea_title,
+            'description' => $idea->abstract,
+            'status' => $idea->status,
+            'created_at' => $idea->created_at?->format('M d, Y'),
+            'updated_at' => $idea->updated_at?->format('M d, Y'),
+            'user' => $idea->user ? ['id' => $idea->user->id, 'name' => $idea->user->name] : null,
+            'collaboration_enabled' => $idea->collaboration_enabled,
+            'comments_enabled' => $idea->comments_enabled,
+            'slug' => $idea->slug,
+        ];
+
         // Add attachment info to idea data
-        $ideaData = $idea->toArray();
         if ($idea->attachment_filename) {
             $ideaData['attachment_filename'] = $idea->attachment_filename;
             $ideaData['attachment_size'] = $idea->attachment_size;
