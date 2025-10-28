@@ -44,21 +44,54 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Index({ ideas: initialIdeas }: Props) {
     const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
     const [sendingRequests, setSendingRequests] = useState<Set<number>>(new Set());
-    const [showFilters, setShowFilters] = useState(false);
-    const [filters, setFilters] = useState<Record<string, any>>({});
-    const [filterStatus, setFilterStatus] = useState<string | null>(null);
-    const [filterMinRevisions, setFilterMinRevisions] = useState<number | null>(null);
-    const [filterCollaboration, setFilterCollaboration] = useState<boolean | null>(null);
+    const [appliedFilters, setAppliedFilters] = useState<Record<string, any>>({});
 
-    const handleApplyFilters = (newFilters: Record<string, any>) => {
-        setFilters(newFilters);
-        // Here you could make an API call to get filtered ideas
-        // For now, we'll filter the existing ideas client-side
+    // Define filter configuration for ideas
+    const filterConfig = [
+        {
+            key: 'status',
+            label: 'Status',
+            type: 'select' as const,
+            options: [
+                { value: 'draft', label: 'Draft' },
+                { value: 'stage 1 review', label: 'Stage 1 Review' },
+                { value: 'stage 2 review', label: 'Stage 2 Review' },
+                { value: 'stage 1 revise', label: 'Stage 1 Revise' },
+                { value: 'stage 2 revise', label: 'Stage 2 Revise' },
+                { value: 'approved', label: 'Approved' }
+            ]
+        },
+        {
+            key: 'search',
+            label: 'Search',
+            type: 'search' as const,
+            placeholder: 'Search by title or description...'
+        },
+        {
+            key: 'thematic_area',
+            label: 'Thematic Area',
+            type: 'search' as const,
+            placeholder: 'Filter by thematic area...'
+        }
+    ];
+
+    const handleFilterChange = (newFilters: Record<string, any>) => {
+        setAppliedFilters(newFilters);
     };
 
     const filteredIdeas = ideas.filter(idea => {
-        if (filterStatus && idea.status !== filterStatus) return false;
-        // Add more filter logic as needed
+        if (appliedFilters.status && idea.status !== appliedFilters.status) return false;
+        if (appliedFilters.search) {
+            const searchLower = appliedFilters.search.toLowerCase();
+            const matchesTitle = idea.title.toLowerCase().includes(searchLower);
+            const matchesDescription = idea.description.toLowerCase().includes(searchLower);
+            if (!matchesTitle && !matchesDescription) return false;
+        }
+        if (appliedFilters.thematic_area && idea.thematic_area) {
+            if (!idea.thematic_area.name.toLowerCase().includes(appliedFilters.thematic_area.toLowerCase())) {
+                return false;
+            }
+        }
         return true;
     });
 
@@ -168,13 +201,10 @@ export default function Index({ ideas: initialIdeas }: Props) {
 
                     {/* Navigation Links */}
                     <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-                        >
-                            <Filter className="h-4 w-4" />
-                            Filters
-                        </button>
+                        <AdvancedFilters
+                            filters={filterConfig}
+                            onFilterChange={handleFilterChange}
+                        />
                         <Link
                             href="/collaboration/inbox"
                             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
@@ -192,21 +222,8 @@ export default function Index({ ideas: initialIdeas }: Props) {
                     </div>
                 </div>
 
-                {/* Advanced Filters */}
-                <AdvancedFilters
-                    open={showFilters}
-                    onToggle={() => setShowFilters(!showFilters)}
-                    onApply={handleApplyFilters}
-                    status={filterStatus}
-                    minRevisions={filterMinRevisions}
-                    collaboration={filterCollaboration}
-                    onStatusChange={setFilterStatus}
-                    onMinRevisionsChange={setFilterMinRevisions}
-                    onCollaborationChange={setFilterCollaboration}
-                />
-
                 {/* Ideas Grid */}
-                <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {filteredIdeas.map((idea) => (
                         <div key={idea.id} className="flex flex-col w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F8EBD5]/30 dark:bg-[#F8EBD5]/10 backdrop-blur-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
                             <div className="flex items-start gap-4 mb-4">
@@ -319,10 +336,10 @@ export default function Index({ ideas: initialIdeas }: Props) {
                     <div className="text-center py-12">
                         <Users className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">
-                            {Object.keys(filters).length > 0 ? 'No ideas match your filters' : 'No collaboration opportunities available'}
+                            {Object.keys(appliedFilters).length > 0 ? 'No ideas match your filters' : 'No collaboration opportunities available'}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-500">
-                            {Object.keys(filters).length > 0 ? 'Try adjusting your filters to see more ideas.' : 'There are currently no ideas available for collaboration.'}
+                            {Object.keys(appliedFilters).length > 0 ? 'Try adjusting your filters to see more ideas.' : 'There are currently no ideas available for collaboration.'}
                         </p>
                     </div>
                 )}

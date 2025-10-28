@@ -46,19 +46,40 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Outbox({ requests }: Props) {
-    const [showFilters, setShowFilters] = useState(false);
-    const [filters, setFilters] = useState<Record<string, any>>({});
-    const [filterStatus, setFilterStatus] = useState<string | null>(null);
-    const [filterMinRevisions, setFilterMinRevisions] = useState<number | null>(null);
-    const [filterCollaboration, setFilterCollaboration] = useState<boolean | null>(null);
+    const [appliedFilters, setAppliedFilters] = useState<Record<string, any>>({});
 
-    const handleApplyFilters = (newFilters: Record<string, any>) => {
-        setFilters(newFilters);
+    // Define filter configuration for outbox requests
+    const filterConfig = [
+        {
+            key: 'status',
+            label: 'Status',
+            type: 'select' as const,
+            options: [
+                { value: 'pending', label: 'Pending' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Rejected' }
+            ]
+        },
+        {
+            key: 'search',
+            label: 'Search',
+            type: 'search' as const,
+            placeholder: 'Search by owner name or idea title...'
+        }
+    ];
+
+    const handleFilterChange = (newFilters: Record<string, any>) => {
+        setAppliedFilters(newFilters);
     };
 
     const filteredRequests = requests.filter(request => {
-        if (filterStatus && request.status !== filterStatus) return false;
-        // Add more filter logic as needed
+        if (appliedFilters.status && request.status !== appliedFilters.status) return false;
+        if (appliedFilters.search) {
+            const searchLower = appliedFilters.search.toLowerCase();
+            const matchesOwner = request.owner.name.toLowerCase().includes(searchLower);
+            const matchesIdea = request.idea.title.toLowerCase().includes(searchLower);
+            if (!matchesOwner && !matchesIdea) return false;
+        }
         return true;
     });
     const getStatusIcon = (status: string) => {
@@ -103,13 +124,10 @@ export default function Outbox({ requests }: Props) {
                             <ArrowLeft className="h-5 w-5" />
                             Back to Collaboration
                         </Link>
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-                        >
-                            <Filter className="h-4 w-4" />
-                            Filters
-                        </button>
+                        <AdvancedFilters
+                            filters={filterConfig}
+                            onFilterChange={handleFilterChange}
+                        />
                         <div className="relative">
                             <h2 className="flex items-center gap-2 text-3xl md:text-4xl font-extrabold tracking-tight">
                                 <Send className='w-10 h-10 text-3xl md:text-4xl dark:text-[#fff200] font-black' />
@@ -121,19 +139,6 @@ export default function Outbox({ requests }: Props) {
                         </div>
                     </div>
                 </div>
-
-                {/* Advanced Filters */}
-                <AdvancedFilters
-                    open={showFilters}
-                    onToggle={() => setShowFilters(!showFilters)}
-                    onApply={handleApplyFilters}
-                    status={filterStatus}
-                    minRevisions={filterMinRevisions}
-                    collaboration={filterCollaboration}
-                    onStatusChange={setFilterStatus}
-                    onMinRevisionsChange={setFilterMinRevisions}
-                    onCollaborationChange={setFilterCollaboration}
-                />
 
                 {/* Requests List */}
                 <div className="space-y-4">
@@ -213,10 +218,10 @@ export default function Outbox({ requests }: Props) {
                     <div className="text-center py-12">
                         <Send className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">
-                            {Object.keys(filters).length > 0 ? 'No requests match your filters' : 'No sent requests'}
+                            {Object.keys(appliedFilters).length > 0 ? 'No requests match your filters' : 'No sent requests'}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-500">
-                            {Object.keys(filters).length > 0 ? 'Try adjusting your filters to see more requests.' : 'You haven\'t sent any collaboration requests yet.'}
+                            {Object.keys(appliedFilters).length > 0 ? 'Try adjusting your filters to see more requests.' : 'You haven\'t sent any collaboration requests yet.'}
                         </p>
                     </div>
                 )}
