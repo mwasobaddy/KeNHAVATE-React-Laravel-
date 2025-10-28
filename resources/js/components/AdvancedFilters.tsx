@@ -1,16 +1,28 @@
-import { useState } from 'react';
+import React from 'react';
 
 interface Props {
     open: boolean;
     onToggle: () => void;
     onApply: (filters: Record<string, any>) => void;
+    status?: string | null;
+    minRevisions?: number | null;
+    collaboration?: boolean | null;
+    onStatusChange?: (status: string | null) => void;
+    onMinRevisionsChange?: (minRevisions: number | null) => void;
+    onCollaborationChange?: (collaboration: boolean | null) => void;
 }
 
-export default function AdvancedFilters({ open, onToggle, onApply }: Props) {
-    const [status, setStatus] = useState<string | null>(null);
-    const [minRevisions, setMinRevisions] = useState<number | null>(null);
-    const [collaboration, setCollaboration] = useState<boolean | null>(null);
-
+export default function AdvancedFilters({
+    open,
+    onToggle,
+    onApply,
+    status = null,
+    minRevisions = null,
+    collaboration = null,
+    onStatusChange,
+    onMinRevisionsChange,
+    onCollaborationChange
+}: Props) {
     if (!open) return null;
 
     function apply() {
@@ -18,9 +30,10 @@ export default function AdvancedFilters({ open, onToggle, onApply }: Props) {
     }
 
     function reset() {
-        setStatus(null);
-        setMinRevisions(null);
-        setCollaboration(null);
+        const resetValues = { status: null, minRevisions: null, collaboration: null };
+        onStatusChange?.(null);
+        onMinRevisionsChange?.(null);
+        onCollaborationChange?.(null);
         onApply({});
     }
 
@@ -34,7 +47,7 @@ export default function AdvancedFilters({ open, onToggle, onApply }: Props) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                     <label className="block text-sm mb-1 text-[#9B9EA4]">Status</label>
-                    <select aria-label="Filter by status" className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-[#1F2937]/80 text-[#231F20] dark:text-[#F8EBD5]" value={status ?? ''} onChange={(e) => setStatus(e.target.value || null)}>
+                    <select aria-label="Filter by status" className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-[#1F2937]/80 text-[#231F20] dark:text-[#F8EBD5]" value={status ?? ''} onChange={(e) => onStatusChange?.(e.target.value || null)}>
                         <option value="">Any</option>
                         <option value="draft">draft</option>
                         <option value="stage 1 review">stage 1 review</option>
@@ -47,12 +60,12 @@ export default function AdvancedFilters({ open, onToggle, onApply }: Props) {
 
                 <div>
                     <label className="block text-sm mb-1 text-[#9B9EA4]">Min revisions</label>
-                    <input aria-label="Minimum revisions" type="number" value={minRevisions ?? ''} onChange={(e) => setMinRevisions(e.target.value ? Number(e.target.value) : null)} className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-[#1F2937]/80 text-[#231F20] dark:text-[#F8EBD5]" />
+                    <input aria-label="Minimum revisions" type="number" value={minRevisions ?? ''} onChange={(e) => onMinRevisionsChange?.(e.target.value ? Number(e.target.value) : null)} className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-[#1F2937]/80 text-[#231F20] dark:text-[#F8EBD5]" />
                 </div>
 
                 <div>
                     <label className="block text-sm mb-1 text-[#9B9EA4]">Collaboration</label>
-                    <select aria-label="Filter by collaboration" className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-[#1F2937]/80 text-[#231F20] dark:text-[#F8EBD5]" value={collaboration === null ? '' : collaboration ? '1' : '0'} onChange={(e) => setCollaboration(e.target.value === '' ? null : e.target.value === '1')}>
+                    <select aria-label="Filter by collaboration" className="w-full border rounded px-2 py-1 text-sm bg-white dark:bg-[#1F2937]/80 text-[#231F20] dark:text-[#F8EBD5]" value={collaboration === null ? '' : collaboration ? '1' : '0'} onChange={(e) => onCollaborationChange?.(e.target.value === '' ? null : e.target.value === '1')}>
                         <option value="">Any</option>
                         <option value="1">Enabled</option>
                         <option value="0">Disabled</option>
