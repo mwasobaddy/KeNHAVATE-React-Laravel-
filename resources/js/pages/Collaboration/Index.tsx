@@ -170,7 +170,7 @@ export default function Index({ ideas: initialIdeas }: Props) {
                 {/* Ideas Grid */}
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {ideas.map((idea) => (
-                        <div key={idea.id} className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F8EBD5]/30 dark:bg-[#F8EBD5]/10 backdrop-blur-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
+                        <div key={idea.id} className="flex flex-col w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F8EBD5]/30 dark:bg-[#F8EBD5]/10 backdrop-blur-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
                             <div className="flex items-start gap-4 mb-4">
                                 <img
                                     src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -198,7 +198,7 @@ export default function Index({ ideas: initialIdeas }: Props) {
                                 </div>
                             </div>
 
-                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-4 line-clamp-3">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-4 line-clamp-3 flex-1">
                                 {idea.description}
                             </p>
 
@@ -210,7 +210,7 @@ export default function Index({ ideas: initialIdeas }: Props) {
                             <div className="flex items-center gap-3">
                                 <Link
                                     href={`/ideas/${idea.slug}/view`}
-                                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm"
+                                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium shadow-md hover:shadow-lg transition-all duration-300"
                                 >
                                     <Eye className="h-4 w-4" />
                                     View
