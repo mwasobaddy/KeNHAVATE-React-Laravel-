@@ -18,8 +18,8 @@ export default function DeleteModal({ open, title = 'Confirm delete', body = 'Ar
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-label={title} onKeyDown={onKeyDown} tabIndex={-1}>
-            <div className="fixed inset-0 bg-black/40" onClick={onCancel} />
-            <div className="bg-white dark:bg-gray-900 rounded-lg p-6 z-10 w-full max-w-lg shadow-lg">
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+            <div className="bg-white dark:bg-[#4c4843] rounded-lg p-6 z-10 w-full max-w-lg shadow-lg">
                 <h3 className="text-lg font-semibold text-[#231F20] dark:text-[#F8EBD5]">{title}</h3>
                 <p className="text-sm text-[#9B9EA4] dark:text-[#9B9EA4] mt-2">{body}</p>
 
