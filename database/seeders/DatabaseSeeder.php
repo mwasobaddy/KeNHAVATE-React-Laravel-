@@ -15,26 +15,8 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::firstOrCreate(
-            [
-                'email' => 'kelvinramsiel@gmail.com',
-                'name' => 'Kelvin Mwangi',
-                'slug' => 'wcuilck',
-                'username' => 'kelvinmwangi',
-                'password' => 'kelvin1234',
-                'email_verified_at' => now(),
-            ],
-            [
-                'email' => 'kelvinramsiel01@gmail.com',
-                'name' => 'Kelvin Mwangi2',
-                'slug' => 'wcuilck',
-                'username' => 'kelvinmwangi',
-                'password' => 'kelvin1234',
-                'email_verified_at' => now(),
-            ]
-        );
-
         $this->call([
+            UserSeeder::class,
             ThematicAreaSeeder::class,
             IdeaSeeder::class,
             TeamMemberSeeder::class,
