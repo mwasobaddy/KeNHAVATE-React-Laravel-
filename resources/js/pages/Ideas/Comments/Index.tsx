@@ -20,7 +20,9 @@ import {
     Edit2,
     Trash2,
     X,
-    Check
+    Check,
+    Eye,
+    File
 } from 'lucide-react';
 
 interface Idea {
@@ -41,6 +43,9 @@ interface Idea {
     liked_by_user?: boolean;
     collaboration_enabled?: boolean;
     comments_enabled?: boolean;
+    attachment_filename?: string;
+    attachment_size?: number;
+    attachment_mime?: string;
 }
 
 interface Comment {
@@ -225,8 +230,10 @@ export default function Comments({ idea, comments }: Props) {
                             className="h-16 w-16 rounded-full object-cover shadow-md" />
 
                         <div className="flex-1">
-                            <h3 className="text-xl font-bold text-[#231F20] dark:text-white">{idea.title}</h3>
-                            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-3">{idea.description}</p>
+                            <h3 className="text-2xl font-bold text-[#231F20] dark:text-white mb-3 leading-tight">{idea.title}</h3>
+                            <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                                {idea.description}
+                            </div>
 
                             <div className="flex items-center gap-4 mt-4 text-sm text-[#9B9EA4]">
                                 <div className="flex items-center gap-2">
@@ -241,6 +248,30 @@ export default function Comments({ idea, comments }: Props) {
                                     <FileText className="h-4 w-4" />
                                     <span>Status: {idea.status || 'N/A'}</span>
                                 </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-3 mt-4">
+                                {idea.slug && (
+                                    <Link
+                                        href={ideasRoutes.show.url(idea.slug)}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm"
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                        View Idea
+                                    </Link>
+                                )}
+                                {idea.attachment_filename && idea.slug && (
+                                    <a
+                                        href={`/ideas/${idea.slug}/attachment`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all text-sm"
+                                    >
+                                        <File className="h-4 w-4" />
+                                        View PDF
+                                    </a>
+                                )}
                             </div>
                         </div>
                     </div>
