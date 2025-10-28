@@ -517,9 +517,12 @@ class IdeaController extends Controller
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
-        $comment->delete();
+        // Instead of deleting, mark as deleted by updating content
+        $comment->update([
+            'content' => 'You deleted this comment',
+        ]);
 
-        Log::info('Comment deleted', [
+        Log::info('Comment marked as deleted', [
             'idea_id' => $idea->id,
             'comment_id' => $comment->id,
             'user_id' => Auth::id()
