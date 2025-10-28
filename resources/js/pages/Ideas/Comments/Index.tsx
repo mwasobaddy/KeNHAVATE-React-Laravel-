@@ -8,7 +8,7 @@ import { toast } from 'react-toastify';
 import DeleteModal from '@/components/DeleteModal';
 import {
     ArrowLeft,
-    MessageSquare,
+    MessagesSquare,
     Send,
     User,
     Calendar,
@@ -201,16 +201,9 @@ export default function Comments({ idea, comments }: Props) {
                 {/* Header with back button */}
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-4">
-                        <Link
-                            href={ideasRoutes.index.url()}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-                        >
-                            <ArrowLeft className="h-5 w-5" />
-                            Back to Ideas
-                        </Link>
                         <div className="relative">
                             <h2 className="flex items-center gap-2 text-3xl md:text-4xl font-extrabold tracking-tight">
-                                <MessageSquare className='w-10 h-10 text-3xl md:text-4xl dark:text-[#fff200] font-black' />
+                                <MessagesSquare className='w-10 h-10 text-3xl md:text-4xl dark:text-[#fff200] font-black' />
                                 <span className='bg-clip-text text-transparent bg-gradient-to-r from-black to-[#fff200] dark:bg-gradient-to-r dark:from-[#FFF200] dark:to-[#F8EBD5]'>
                                     Comments
                                 </span>
@@ -236,19 +229,43 @@ export default function Comments({ idea, comments }: Props) {
                                 {idea.description}
                             </div>
 
-                            <div className="flex items-center gap-4 mt-4 text-sm text-[#9B9EA4]">
-                                <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-4 mt-4 text-sm text-[#9B9EA4] flex-wrap">
+                                <span className={`flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium w-fit ${
+                                    idea.status === 'draft' ? 'text-gray-600 bg-gray-200 dark:text-gray-300 dark:bg-gray-700/50' :
+                                    idea.status === 'stage 1 review' ? 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30' :
+                                    idea.status === 'stage 2 review' ? 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30' :
+                                    idea.status === 'stage 1 revise' ? 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30' :
+                                    idea.status === 'stage 2 revise' ? 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30' :
+                                    idea.status === 'approved' ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30' :
+                                    'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
+                                }`}>
                                     <User className="h-4 w-4" />
                                     <span>By {idea.user?.name || 'Unknown'}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
+                                </span>
+                                <span className={`flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium w-fit ${
+                                    idea.status === 'draft' ? 'text-gray-600 bg-gray-200 dark:text-gray-300 dark:bg-gray-700/50' :
+                                    idea.status === 'stage 1 review' ? 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30' :
+                                    idea.status === 'stage 2 review' ? 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30' :
+                                    idea.status === 'stage 1 revise' ? 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30' :
+                                    idea.status === 'stage 2 revise' ? 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30' :
+                                    idea.status === 'approved' ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30' :
+                                    'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
+                                }`}>
                                     <Calendar className="h-4 w-4" />
                                     <span>{idea.created_at}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
+                                </span>
+                                <span className={`flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium w-fit ${
+                                    idea.status === 'draft' ? 'text-gray-600 bg-gray-200 dark:text-gray-300 dark:bg-gray-700/50' :
+                                    idea.status === 'stage 1 review' ? 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30' :
+                                    idea.status === 'stage 2 review' ? 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30' :
+                                    idea.status === 'stage 1 revise' ? 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30' :
+                                    idea.status === 'stage 2 revise' ? 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30' :
+                                    idea.status === 'approved' ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30' :
+                                    'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
+                                }`}>
                                     <FileText className="h-4 w-4" />
                                     <span>Status: {idea.status || 'N/A'}</span>
-                                </div>
+                                </span>
                             </div>
 
                             {/* Action Buttons */}
@@ -256,7 +273,7 @@ export default function Comments({ idea, comments }: Props) {
                                 {idea.slug && (
                                     <Link
                                         href={ideasRoutes.show.url(idea.slug)}
-                                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm"
+                                        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium shadow-md hover:shadow-lg transition-all duration-300"
                                     >
                                         <Eye className="h-4 w-4" />
                                         View Idea
@@ -267,7 +284,7 @@ export default function Comments({ idea, comments }: Props) {
                                         href={`/ideas/${idea.slug}/attachment`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all text-sm"
+                                        className="items-center gap-2 p-4 px-4 py-2 bg-gray-950 text-white hover:bg-gray-800 dark:bg-gray-200 dark:text-black hover:dark:bg-gray-400 rounded-lg text-sm font-medium shadow-md hover:shadow-lg hidden lg:flex transition-all duration-300"
                                     >
                                         <File className="h-4 w-4" />
                                         View PDF
@@ -283,7 +300,7 @@ export default function Comments({ idea, comments }: Props) {
                     <div className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F8EBD5]/30 dark:bg-[#F8EBD5]/10 backdrop-blur-lg shadow-lg">
                         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                             <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
-                                <MessageSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                <MessagesSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                 Add a Comment
                             </h2>
                         </div>
@@ -354,7 +371,7 @@ export default function Comments({ idea, comments }: Props) {
                 <div className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F8EBD5]/30 dark:bg-[#F8EBD5]/10 backdrop-blur-lg shadow-lg">
                     <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                         <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
-                            <MessageSquare className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                            <MessagesSquare className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                             Discussion ({comments.length})
                         </h2>
                     </div>
@@ -362,7 +379,7 @@ export default function Comments({ idea, comments }: Props) {
                     <div className="p-6 max-h-96 overflow-y-auto">
                         {comments.length === 0 ? (
                             <div className="text-center py-12">
-                                <MessageSquare className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                                <MessagesSquare className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                                 <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">No comments yet</h3>
                                 <p className="text-sm text-gray-500 dark:text-gray-500">
                                     {idea.comments_enabled ? 'Be the first to share your thoughts!' : 'Comments are disabled for this idea.'}

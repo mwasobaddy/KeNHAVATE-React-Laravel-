@@ -67,4 +67,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(Comment::class);
     }
+
+    /**
+     * Collaboration requests sent by this user.
+     */
+    public function sentCollaborationRequests()
+    {
+        return $this->hasMany(CollaborationRequest::class, 'requester_id');
+    }
+
+    /**
+     * Collaboration requests received by this user (as idea owner).
+     */
+    public function receivedCollaborationRequests()
+    {
+        return $this->hasMany(CollaborationRequest::class, 'owner_id');
+    }
 }
