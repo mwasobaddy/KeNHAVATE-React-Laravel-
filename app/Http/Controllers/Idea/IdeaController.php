@@ -390,7 +390,18 @@ class IdeaController extends Controller
 
         $comments = $idea->comments()->with('user')->orderBy('created_at', 'desc')->get();
 
-        return Inertia::render('Ideas/Comments/Index', compact('idea', 'comments'));
+        // Add attachment info to idea data
+        $ideaData = $idea->toArray();
+        if ($idea->attachment_filename) {
+            $ideaData['attachment_filename'] = $idea->attachment_filename;
+            $ideaData['attachment_size'] = $idea->attachment_size;
+            $ideaData['attachment_mime'] = $idea->attachment_mime;
+        }
+
+        return Inertia::render('Ideas/Comments/Index', [
+            'idea' => $ideaData,
+            'comments' => $comments
+        ]);
     }
 
     public function storeComment(Request $request, $slug)
