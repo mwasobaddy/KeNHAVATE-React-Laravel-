@@ -39,7 +39,8 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Index({ ideas }: Props) {
+export default function Index({ ideas: initialIdeas }: Props) {
+    const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
     const [sendingRequests, setSendingRequests] = useState<Set<number>>(new Set());
 
     const handleSendRequest = async (idea: Idea) => {
@@ -61,8 +62,14 @@ export default function Index({ ideas }: Props) {
 
             if (response.ok) {
                 toast.success('Collaboration request sent successfully!');
-                // Update the idea in the list to show pending request
-                idea.has_pending_request = true;
+                // Update the idea in state to show pending request
+                setIdeas(prevIdeas =>
+                    prevIdeas.map(ideaItem =>
+                        ideaItem.id === idea.id
+                            ? { ...ideaItem, has_pending_request: true }
+                            : ideaItem
+                    )
+                );
             } else {
                 const data = await response.json();
                 toast.error(data.message || 'Failed to send collaboration request');
@@ -92,8 +99,14 @@ export default function Index({ ideas }: Props) {
 
             if (response.ok) {
                 toast.success('Collaboration request cancelled');
-                idea.has_pending_request = false;
-                idea.existing_request_id = null;
+                // Update the idea in state to remove pending request
+                setIdeas(prevIdeas =>
+                    prevIdeas.map(ideaItem =>
+                        ideaItem.id === idea.id
+                            ? { ...ideaItem, has_pending_request: false, existing_request_id: null }
+                            : ideaItem
+                    )
+                );
             } else {
                 toast.error('Failed to cancel collaboration request');
             }
