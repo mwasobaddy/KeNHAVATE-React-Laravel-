@@ -42,6 +42,7 @@ class CollaborationController extends Controller
                     'slug' => $idea->slug,
                     'has_pending_request' => $existingRequest && $existingRequest->status === 'pending',
                     'existing_request_id' => $existingRequest ? $existingRequest->id : null,
+                    'request_status' => $existingRequest ? $existingRequest->status : null,
                 ];
             });
 
