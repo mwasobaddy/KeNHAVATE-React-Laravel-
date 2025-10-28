@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->text('content');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['idea_id', 'created_at']);
         });
