@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { Upload, FileText, CheckCircle2, AlertCircle, Info, Sparkles, Settings2, Plus, Minus, User, Calendar, Eye, CircleX, Heart, Users, SquarePen, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BreadcrumbItem } from '@/types';
 import ideasRoutes from '@/routes/ideas';
 import { toast } from 'react-toastify';
+import DeleteModal from '@/components/DeleteModal';
 
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -73,17 +74,19 @@ export default function Edit() {
         collaboration_enabled: idea.collaboration_enabled,
         team_effort: idea.team_effort || (idea.team_members && idea.team_members.length > 0),
         comments_enabled: idea.comments_enabled ?? true,
-        collaboration_deadline: idea.collaboration_deadline,
+        collaboration_deadline: idea.collaboration_deadline ? new Date(idea.collaboration_deadline).toISOString().split('T')[0] : '',
         attachment: null,
-        remove_attachment: false,
         team_members: idea.team_members || [],
     });
 
     const [clientError, setClientError] = useState<string | null>(null);
     const [fileName, setFileName] = useState<string>('');
+    const [deleteAttachmentModalOpen, setDeleteAttachmentModalOpen] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [attachmentRemoved, setAttachmentRemoved] = useState(false);
 
     // Check if there's an existing attachment
-    const hasExistingAttachment = idea.attachment_filename && idea.attachment_size;
+    const hasExistingAttachment = !attachmentRemoved && idea.attachment_filename && idea.attachment_size;
 
     function setField(key: string, value: any) {
         (form as any).setData(key, value);
@@ -110,11 +113,11 @@ export default function Edit() {
         const file = e.target.files?.[0] || null;
         if (file && file.size > MAX_ATTACHMENT_BYTES) {
             setClientError(`Attachment must be <= ${Math.round(MAX_ATTACHMENT_BYTES / 1024 / 1024)} MB`);
-            (form as any).setData('attachment', null);
+            setSelectedFile(null);
             setFileName('');
             return;
         }
-        (form as any).setData('attachment', file);
+        setSelectedFile(file);
         setFileName(file?.name || '');
     }
 
@@ -122,28 +125,102 @@ export default function Edit() {
         e.preventDefault();
         setClientError(null);
 
-        if (form.data.attachment && (form.data.attachment as File).size > MAX_ATTACHMENT_BYTES) {
+        // Validate file size if a file is selected
+        if (selectedFile && selectedFile.size > MAX_ATTACHMENT_BYTES) {
             setClientError(`Attachment must be <= ${Math.round(MAX_ATTACHMENT_BYTES / 1024 / 1024)} MB`);
             return;
         }
 
-        // If removing attachment and no new one uploaded, require confirmation
-        if (form.data.remove_attachment && !form.data.attachment && hasExistingAttachment) {
-            if (!confirm('Are you sure you want to remove the attachment without uploading a new one?')) {
-                return;
-            }
+        // If no existing attachment and not uploading new one, require attachment
+        if (!hasExistingAttachment && !selectedFile) {
+            setClientError('Please upload an attachment or it is required.');
+            return;
         }
 
-        form.patch(`/ideas/${idea.slug}`, {
+        // Create FormData manually
+        const formData = new FormData();
+        
+        // Add all form fields
+        formData.append('idea_title', form.data.idea_title);
+        formData.append('thematic_area_id', form.data.thematic_area_id.toString());
+        formData.append('abstract', form.data.abstract);
+        formData.append('problem_statement', form.data.problem_statement);
+        formData.append('proposed_solution', form.data.proposed_solution);
+        formData.append('cost_benefit_analysis', form.data.cost_benefit_analysis);
+        formData.append('declaration_of_interests', form.data.declaration_of_interests);
+        formData.append('original_idea_disclaimer', form.data.original_idea_disclaimer ? '1' : '0');
+        formData.append('collaboration_enabled', form.data.collaboration_enabled ? '1' : '0');
+        formData.append('team_effort', form.data.team_effort ? '1' : '0');
+        formData.append('comments_enabled', form.data.comments_enabled ? '1' : '0');
+        
+        if (form.data.collaboration_deadline) {
+            formData.append('collaboration_deadline', form.data.collaboration_deadline);
+        }
+        
+        // Add team members
+        if (form.data.team_members && form.data.team_members.length > 0) {
+            form.data.team_members.forEach((member: any, index: number) => {
+                formData.append(`team_members[${index}][name]`, member.name);
+                formData.append(`team_members[${index}][email]`, member.email);
+                formData.append(`team_members[${index}][role]`, member.role);
+            });
+        }
+        
+        // Add file if selected
+        if (selectedFile) {
+            formData.append('attachment', selectedFile);
+        }
+        
+        // Add method spoofing for PATCH
+        formData.append('_method', 'PATCH');
+
+        console.log('Submitting with FormData:', {
+            hasAttachment: !!selectedFile,
+            fileName: selectedFile?.name,
+            fileSize: selectedFile?.size,
+            hasExistingAttachment,
+            attachmentRemoved
+        });
+
+        // Use router.post directly with FormData instead of form.post
+        router.post(`/ideas/${idea.slug}`, formData, {
             preserveScroll: true,
+            forceFormData: true,
             onSuccess: () => {
                 toast.success('Idea updated successfully!');
+                // Clear the selected file after successful submission
+                setSelectedFile(null);
+                setFileName('');
+                // Reset attachment removed flag if a new file was uploaded
+                if (selectedFile) {
+                    setAttachmentRemoved(false);
+                }
             },
             onError: () => {
                 toast.error('Failed to update idea. Please check your input and try again.');
             },
-            onFinish: () => {},
         });
+    }
+
+    function confirmDeleteAttachment() {
+        router.patch(`/ideas/${idea.slug}/remove-attachment`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success('Attachment removed successfully!');
+                // Update the local state to reflect the removal
+                setAttachmentRemoved(true);
+                setFileName('');
+                setSelectedFile(null);
+                setDeleteAttachmentModalOpen(false);
+            },
+            onError: () => {
+                toast.error('Failed to remove attachment. Please try again.');
+            },
+        });
+    }
+
+    function cancelDeleteAttachment() {
+        setDeleteAttachmentModalOpen(false);
     }
 
     const progress = form.progress;
@@ -684,7 +761,7 @@ export default function Edit() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex gap-2">
+                                        <div className="flex flex-col gap-2">
                                             <a
                                                 href={`/ideas/${idea.slug}/attachment`}
                                                 target="_blank"
@@ -696,12 +773,7 @@ export default function Edit() {
                                             </a>
                                             <button
                                                 type="button"
-                                                onClick={() => {
-                                                    if (confirm('Are you sure you want to remove the current attachment?')) {
-                                                        // We'll handle this in the backend by setting attachment fields to null
-                                                        setField('remove_attachment', true);
-                                                    }
-                                                }}
+                                                onClick={() => setDeleteAttachmentModalOpen(true)}
                                                 disabled={form.processing}
                                                 className="px-3 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
                                             >
@@ -714,7 +786,7 @@ export default function Edit() {
 
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    {hasExistingAttachment ? 'Upload New Attachment (optional)' : 'Upload The Actual Idea Proposal Document'} <span className="text-red-500">*</span>
+                                    {hasExistingAttachment ? 'Upload New Attachment (optional)' : 'Upload The Actual Idea Proposal Document'} {!hasExistingAttachment ? <span className="text-red-500">*</span> : ''}
                                 </label>
                                 <div className="relative">
                                     <input
@@ -802,6 +874,16 @@ export default function Edit() {
                     </div>
                 </form>
             </div>
+
+            {/* Delete Attachment Modal */}
+            <DeleteModal
+                open={deleteAttachmentModalOpen}
+                title="Remove Attachment"
+                body="Are you sure you want to permanently delete this document? This action cannot be undone."
+                confirmLabel="Delete Document"
+                onCancel={cancelDeleteAttachment}
+                onConfirm={confirmDeleteAttachment}
+            />
         </AppLayout>
     );
 }
