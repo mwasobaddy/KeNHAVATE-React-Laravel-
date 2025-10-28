@@ -65,7 +65,7 @@ class IdeaController extends Controller
 
     public function show($slug)
     {
-        $idea = Idea::with('teamMembers', 'thematicArea')->withCount(['teamMembers', 'collaborationMembers', 'likes'])->where('slug', $slug)->first();
+        $idea = Idea::with('user', 'teamMembers', 'thematicArea')->withCount(['teamMembers', 'collaborationMembers', 'likes'])->where('slug', $slug)->first();
         if (!$idea) {
             return response()->json(['message' => 'Idea not found'], 404);
         }
