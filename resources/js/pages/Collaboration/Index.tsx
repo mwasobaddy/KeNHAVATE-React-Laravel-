@@ -46,6 +46,9 @@ export default function Index({ ideas: initialIdeas }: Props) {
     const [sendingRequests, setSendingRequests] = useState<Set<number>>(new Set());
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState<Record<string, any>>({});
+    const [filterStatus, setFilterStatus] = useState<string | null>(null);
+    const [filterMinRevisions, setFilterMinRevisions] = useState<number | null>(null);
+    const [filterCollaboration, setFilterCollaboration] = useState<boolean | null>(null);
 
     const handleApplyFilters = (newFilters: Record<string, any>) => {
         setFilters(newFilters);
@@ -54,7 +57,7 @@ export default function Index({ ideas: initialIdeas }: Props) {
     };
 
     const filteredIdeas = ideas.filter(idea => {
-        if (filters.status && idea.status !== filters.status) return false;
+        if (filterStatus && idea.status !== filterStatus) return false;
         // Add more filter logic as needed
         return true;
     });
@@ -194,6 +197,12 @@ export default function Index({ ideas: initialIdeas }: Props) {
                     open={showFilters}
                     onToggle={() => setShowFilters(!showFilters)}
                     onApply={handleApplyFilters}
+                    status={filterStatus}
+                    minRevisions={filterMinRevisions}
+                    collaboration={filterCollaboration}
+                    onStatusChange={setFilterStatus}
+                    onMinRevisionsChange={setFilterMinRevisions}
+                    onCollaborationChange={setFilterCollaboration}
                 />
 
                 {/* Ideas Grid */}

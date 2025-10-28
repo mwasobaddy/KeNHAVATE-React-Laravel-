@@ -50,13 +50,16 @@ export default function Inbox({ requests }: Props) {
     const [respondingRequests, setRespondingRequests] = useState<Set<number>>(new Set());
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState<Record<string, any>>({});
+    const [filterStatus, setFilterStatus] = useState<string | null>(null);
+    const [filterMinRevisions, setFilterMinRevisions] = useState<number | null>(null);
+    const [filterCollaboration, setFilterCollaboration] = useState<boolean | null>(null);
 
     const handleApplyFilters = (newFilters: Record<string, any>) => {
         setFilters(newFilters);
     };
 
     const filteredRequests = requests.filter(request => {
-        if (filters.status && request.status !== filters.status) return false;
+        if (filterStatus && request.status !== filterStatus) return false;
         // Add more filter logic as needed
         return true;
     });
@@ -166,6 +169,12 @@ export default function Inbox({ requests }: Props) {
                     open={showFilters}
                     onToggle={() => setShowFilters(!showFilters)}
                     onApply={handleApplyFilters}
+                    status={filterStatus}
+                    minRevisions={filterMinRevisions}
+                    collaboration={filterCollaboration}
+                    onStatusChange={setFilterStatus}
+                    onMinRevisionsChange={setFilterMinRevisions}
+                    onCollaborationChange={setFilterCollaboration}
                 />
 
                 {/* Requests List */}
