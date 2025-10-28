@@ -25,6 +25,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('ideas/{slug}/attachment', [IdeaController::class, 'attachment'])->name('ideas.attachment');
     Route::get('ideas/{slug}/edit', [IdeaController::class, 'edit'])->name('ideas.edit');
     Route::patch('ideas/{slug}', [IdeaController::class, 'update'])->name('ideas.update');
+    Route::patch('ideas/{slug}/remove-attachment', [IdeaController::class, 'removeAttachment'])->name('ideas.remove-attachment');
     Route::post('ideas/{idea}/toggle-like', [IdeaLikeController::class, 'toggle'])->name('ideas.toggle-like');
     Route::post('ideas/{idea}/toggle-collaboration', [IdeaController::class, 'toggleCollaboration'])->name('ideas.toggle-collaboration');
     Route::post('ideas/{idea}/toggle-comments', [IdeaController::class, 'toggleComment'])->name('ideas.toggle-comments');
