@@ -459,11 +459,15 @@ export default function Comments({ idea, comments }: Props) {
                                                                     ? 'bg-[#FFF200] text-[#231F20] rounded-br-md'
                                                                     : 'bg-white/90 dark:bg-gray-800/70 text-[#231F20] dark:text-[#F8EBD5] rounded-bl-md border border-gray-100 dark:border-gray-700'
                                                             }`}>
-                                                                <p className="text-sm whitespace-pre-wrap leading-relaxed">{comment.content}</p>
+                                                                <p className={`text-sm whitespace-pre-wrap leading-relaxed ${
+                                                                    comment.content === 'You deleted this comment' ? 'italic text-gray-500 dark:text-gray-400' : ''
+                                                                }`}>
+                                                                    {comment.content}
+                                                                </p>
                                                             </div>
 
-                                                            {/* Edit/Delete buttons - show for current user's messages */}
-                                                            {currentUser && currentUser.id === comment.user.id && (
+                                                            {/* Edit/Delete buttons - show for current user's messages that are not deleted */}
+                                                            {currentUser && currentUser.id === comment.user.id && comment.content !== 'You deleted this comment' && (
                                                                 <div className={`absolute top-2 ${
                                                                     isCurrentUser ? '-left-16' : '-right-16'
                                                                 } flex items-center gap-1 opacity-100`}>
