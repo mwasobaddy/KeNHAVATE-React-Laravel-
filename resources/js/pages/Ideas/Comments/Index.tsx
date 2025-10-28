@@ -56,6 +56,7 @@ interface Comment {
         name: string;
     };
     created_at: string;
+    updated_at: string;
 }
 
 interface Props {
@@ -279,7 +280,7 @@ export default function Comments({ idea, comments }: Props) {
 
                 {/* Add Comment Form */}
                 {idea.comments_enabled ? (
-                    <div className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F8EBD5]/30 dark:bg-[#F8EBD5]/10 backdrop-blur-lg p-6 shadow-lg">
+                    <div className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F8EBD5]/30 dark:bg-[#F8EBD5]/10 backdrop-blur-lg shadow-lg">
                         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                             <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
                                 <MessageSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -290,7 +291,7 @@ export default function Comments({ idea, comments }: Props) {
                         <form onSubmit={submit} className="p-6 pt-0">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 my-2">
                                         Your Comment <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
@@ -319,7 +320,7 @@ export default function Comments({ idea, comments }: Props) {
                                     <button
                                         type="submit"
                                         disabled={form.processing}
-                                        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[#FFF200] text-[#231F20] hover:bg-yellow-400 transition disabled:opacity-50 border border-black"
+                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FFF200] text-[#231F20] hover:bg-yellow-400 transition disabled:opacity-50 border border-black"
                                     >
                                         {form.processing ? (
                                             <>
@@ -349,16 +350,16 @@ export default function Comments({ idea, comments }: Props) {
                     </div>
                 )}
 
-                {/* Comments List */}
+                {/* Comments List - Chat Style */}
                 <div className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F8EBD5]/30 dark:bg-[#F8EBD5]/10 backdrop-blur-lg shadow-lg">
                     <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                         <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
                             <MessageSquare className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                            Comments ({comments.length})
+                            Discussion ({comments.length})
                         </h2>
                     </div>
 
-                    <div className="p-6">
+                    <div className="p-6 max-h-96 overflow-y-auto">
                         {comments.length === 0 ? (
                             <div className="text-center py-12">
                                 <MessageSquare className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
@@ -368,97 +369,127 @@ export default function Comments({ idea, comments }: Props) {
                                 </p>
                             </div>
                         ) : (
-                            <div className="space-y-6">
-                                {comments.map((comment) => (
-                                    <div key={comment.id} className="flex gap-4 p-4 rounded-xl bg-white/50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700">
-                                        <img
-                                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                                comment.user.name
-                                            )}&background=6B7280&color=FFFFFF&rounded=true&size=40`}
-                                            alt={`${comment.user.name} avatar`}
-                                            className="h-10 w-10 rounded-full object-cover flex-shrink-0" />
+                            <div className="space-y-4">
+                                {comments.map((comment, index) => {
+                                    const isCurrentUser = currentUser && currentUser.id === comment.user.id;
+                                    const isFirstInGroup = index === 0 || comments[index - 1].user.id !== comment.user.id;
+                                    const isLastInGroup = index === comments.length - 1 || comments[index + 1].user.id !== comment.user.id;
 
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-semibold text-[#231F20] dark:text-white">{comment.user.name}</span>
-                                                    <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                                        <Calendar className="h-3 w-3" />
-                                                        {new Date(comment.created_at).toLocaleDateString('en-US', {
-                                                            year: 'numeric',
-                                                            month: 'short',
-                                                            day: 'numeric',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit'
-                                                        })}
-                                                    </span>
-                                                </div>
+                                    return (
+                                        <div key={comment.id} className={`flex gap-3 ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                                            {/* Avatar */}
+                                            {isFirstInGroup && (
+                                                <img
+                                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                                        comment.user.name
+                                                    )}&background=${isCurrentUser ? 'FFF200' : '6B7280'}&color=${isCurrentUser ? '231F20' : 'FFFFFF'}&rounded=true&size=32`}
+                                                    alt={`${comment.user.name} avatar`}
+                                                    className="h-8 w-8 rounded-full object-cover flex-shrink-0 mt-1" />
+                                            )}
+                                            {!isFirstInGroup && (
+                                                <div className="w-8 flex-shrink-0" />
+                                            )}
 
-                                                {/* Edit/Delete buttons for comment owner */}
-                                                {currentUser && currentUser.id === comment.user.id && (
-                                                    <div className="flex items-center gap-1">
-                                                        {editingCommentId === comment.id ? (
-                                                            <>
+                                            {/* Message Bubble */}
+                                            <div className={`flex-1 min-w-0 ${isCurrentUser ? 'flex flex-col items-end' : ''}`}>
+                                                {/* User name and timestamp - only show for first message in group */}
+                                                {isFirstInGroup && (
+                                                    <div className={`flex items-center gap-2 mb-1 text-xs text-gray-500 dark:text-gray-400 ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
+                                                        <span className="font-medium">{comment.user.name}</span>
+                                                        <span className="flex items-center gap-1">
+                                                            <Calendar className="h-3 w-3" />
+                                                            {new Date(comment.created_at).toLocaleDateString('en-US', {
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                            {comment.updated_at !== comment.created_at && (
+                                                                <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">(edited)</span>
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {/* Comment content or edit form */}
+                                                <div className={`group relative max-w-[80%] ${isCurrentUser ? 'ml-auto' : 'mr-auto'}`}>
+                                                    {editingCommentId === comment.id ? (
+                                                        <div className="space-y-2">
+                                                            <div className={`p-4 rounded-2xl border-2 border-dashed ${
+                                                                isCurrentUser
+                                                                    ? 'bg-[#FFF200]/20 border-[#FFF200] rounded-br-md'
+                                                                    : 'bg-white/80 dark:bg-gray-800/50 border-gray-300 dark:border-gray-600 rounded-bl-md'
+                                                            }`}>
+                                                                <textarea
+                                                                    value={editContent}
+                                                                    onChange={(e) => setEditContent(e.target.value)}
+                                                                    className="w-full bg-transparent border-none outline-none resize-none text-sm"
+                                                                    rows={3}
+                                                                    placeholder="Edit your comment..."
+                                                                />
+                                                            </div>
+                                                            {/* Edit action buttons */}
+                                                            <div className={`flex items-center gap-2 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                                                                 <button
                                                                     onClick={() => submitEdit(comment.id)}
-                                                                    className="p-1 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-                                                                    title="Save changes"
+                                                                    className="flex items-center gap-1 px-3 py-1 text-xs bg-green-600 text-white hover:bg-green-700 rounded-full transition-colors"
                                                                 >
-                                                                    <Check className="h-4 w-4" />
+                                                                    <Check className="h-3 w-3" />
+                                                                    Save
                                                                 </button>
                                                                 <button
                                                                     onClick={cancelEditing}
-                                                                    className="p-1 text-gray-600 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                                                                    title="Cancel editing"
+                                                                    className="flex items-center gap-1 px-3 py-1 text-xs bg-gray-600 text-white hover:bg-gray-700 rounded-full transition-colors"
                                                                 >
-                                                                    <X className="h-4 w-4" />
+                                                                    <X className="h-3 w-3" />
+                                                                    Cancel
                                                                 </button>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => startEditing(comment)}
-                                                                    className="p-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                                                                    title="Edit comment"
-                                                                >
-                                                                    <Edit2 className="h-4 w-4" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => deleteComment(comment.id)}
-                                                                    className="p-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                                                                    title="Delete comment"
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Comment content or edit form */}
-                                            {editingCommentId === comment.id ? (
-                                                <div className="space-y-2">
-                                                    <textarea
-                                                        value={editContent}
-                                                        onChange={(e) => setEditContent(e.target.value)}
-                                                        className="w-full px-3 py-2 rounded-xl border border-[#9B9EA4]/30 text-sm bg-white/80 dark:bg-gray-900/50 text-[#231F20] dark:text-[#F8EBD5] resize-none"
-                                                        rows={3}
-                                                        placeholder="Edit your comment..."
-                                                    />
-                                                    {editError && (
-                                                        <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-                                                            <AlertCircle className="h-4 w-4" />
-                                                            {editError}
+                                                            </div>
+                                                            {editError && (
+                                                                <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                                                                    <AlertCircle className="h-4 w-4" />
+                                                                    {editError}
+                                                                </div>
+                                                            )}
                                                         </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className={`p-4 rounded-2xl shadow-sm ${
+                                                                isCurrentUser
+                                                                    ? 'bg-[#FFF200] text-[#231F20] rounded-br-md'
+                                                                    : 'bg-white/90 dark:bg-gray-800/70 text-[#231F20] dark:text-[#F8EBD5] rounded-bl-md border border-gray-100 dark:border-gray-700'
+                                                            }`}>
+                                                                <p className="text-sm whitespace-pre-wrap leading-relaxed">{comment.content}</p>
+                                                            </div>
+
+                                                            {/* Edit/Delete buttons - show for current user's messages */}
+                                                            {currentUser && currentUser.id === comment.user.id && (
+                                                                <div className={`absolute top-2 ${
+                                                                    isCurrentUser ? '-left-16' : '-right-16'
+                                                                } flex items-center gap-1 opacity-100`}>
+                                                                    <button
+                                                                        onClick={() => startEditing(comment)}
+                                                                        className="p-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 bg-white dark:bg-gray-800 rounded-full shadow-sm"
+                                                                        title="Edit comment"
+                                                                    >
+                                                                        <Edit2 className="h-3 w-3" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => deleteComment(comment.id)}
+                                                                        className="p-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 bg-white dark:bg-gray-800 rounded-full shadow-sm"
+                                                                        title="Delete comment"
+                                                                    >
+                                                                        <Trash2 className="h-3 w-3" />
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </>
                                                     )}
                                                 </div>
-                                            ) : (
-                                                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{comment.content}</p>
-                                            )}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
