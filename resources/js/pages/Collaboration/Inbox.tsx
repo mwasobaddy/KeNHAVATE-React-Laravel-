@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
-import { MessageSquare, CheckCircle, XCircle, Eye, ArrowLeft, Clock } from 'lucide-react';
+import { MessageSquare, CheckCircle, XCircle, Eye, ArrowLeft, Clock, Filter } from 'lucide-react';
 import { toast } from 'react-toastify';
+import AdvancedFilters from '@/components/AdvancedFilters';
 
 interface CollaborationRequest {
     id: number;
@@ -47,6 +48,18 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Inbox({ requests }: Props) {
     const [respondingRequests, setRespondingRequests] = useState<Set<number>>(new Set());
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState<Record<string, any>>({});
+
+    const handleApplyFilters = (newFilters: Record<string, any>) => {
+        setFilters(newFilters);
+    };
+
+    const filteredRequests = requests.filter(request => {
+        if (filters.status && request.status !== filters.status) return false;
+        // Add more filter logic as needed
+        return true;
+    });
 
     const handleRespond = async (requestId: number, action: 'approve' | 'reject') => {
         if (respondingRequests.has(requestId)) return;
@@ -129,6 +142,13 @@ export default function Inbox({ requests }: Props) {
                             <ArrowLeft className="h-5 w-5" />
                             Back to Collaboration
                         </Link>
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                        >
+                            <Filter className="h-4 w-4" />
+                            Filters
+                        </button>
                         <div className="relative">
                             <h2 className="flex items-center gap-2 text-3xl md:text-4xl font-extrabold tracking-tight">
                                 <MessageSquare className='w-10 h-10 text-3xl md:text-4xl dark:text-[#fff200] font-black' />
@@ -141,9 +161,16 @@ export default function Inbox({ requests }: Props) {
                     </div>
                 </div>
 
+                {/* Advanced Filters */}
+                <AdvancedFilters
+                    open={showFilters}
+                    onToggle={() => setShowFilters(!showFilters)}
+                    onApply={handleApplyFilters}
+                />
+
                 {/* Requests List */}
                 <div className="space-y-4">
-                    {requests.map((request) => (
+                    {filteredRequests.map((request) => (
                         <div key={request.id} className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F8EBD5]/30 dark:bg-[#F8EBD5]/10 backdrop-blur-lg p-6 shadow-lg">
                             <div className="flex items-start gap-4">
                                 <img
@@ -238,12 +265,14 @@ export default function Inbox({ requests }: Props) {
                     ))}
                 </div>
 
-                {requests.length === 0 && (
+                {filteredRequests.length === 0 && (
                     <div className="text-center py-12">
                         <MessageSquare className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">No collaboration requests</h3>
+                        <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            {Object.keys(filters).length > 0 ? 'No requests match your filters' : 'No collaboration requests'}
+                        </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-500">
-                            You haven't received any collaboration requests yet.
+                            {Object.keys(filters).length > 0 ? 'Try adjusting your filters to see more requests.' : 'You haven\'t received any collaboration requests yet.'}
                         </p>
                     </div>
                 )}

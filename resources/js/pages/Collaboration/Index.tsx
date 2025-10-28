@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
-import { Users, Send, Clock, CheckCircle, XCircle, Eye, MessageSquare } from 'lucide-react';
+import { Users, Send, Clock, CheckCircle, XCircle, Eye, MessageSquare, Filter } from 'lucide-react';
 import { toast } from 'react-toastify';
+import AdvancedFilters from '@/components/AdvancedFilters';
 
 interface Idea {
     id: number;
@@ -43,6 +44,20 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Index({ ideas: initialIdeas }: Props) {
     const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
     const [sendingRequests, setSendingRequests] = useState<Set<number>>(new Set());
+    const [showFilters, setShowFilters] = useState(false);
+    const [filters, setFilters] = useState<Record<string, any>>({});
+
+    const handleApplyFilters = (newFilters: Record<string, any>) => {
+        setFilters(newFilters);
+        // Here you could make an API call to get filtered ideas
+        // For now, we'll filter the existing ideas client-side
+    };
+
+    const filteredIdeas = ideas.filter(idea => {
+        if (filters.status && idea.status !== filters.status) return false;
+        // Add more filter logic as needed
+        return true;
+    });
 
     const handleSendRequest = async (idea: Idea) => {
         if (sendingRequests.has(idea.id)) return;
@@ -150,6 +165,13 @@ export default function Index({ ideas: initialIdeas }: Props) {
 
                     {/* Navigation Links */}
                     <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                        >
+                            <Filter className="h-4 w-4" />
+                            Filters
+                        </button>
                         <Link
                             href="/collaboration/inbox"
                             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
@@ -167,9 +189,16 @@ export default function Index({ ideas: initialIdeas }: Props) {
                     </div>
                 </div>
 
+                {/* Advanced Filters */}
+                <AdvancedFilters
+                    open={showFilters}
+                    onToggle={() => setShowFilters(!showFilters)}
+                    onApply={handleApplyFilters}
+                />
+
                 {/* Ideas Grid */}
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {ideas.map((idea) => (
+                <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                    {filteredIdeas.map((idea) => (
                         <div key={idea.id} className="flex flex-col w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F8EBD5]/30 dark:bg-[#F8EBD5]/10 backdrop-blur-lg p-6 shadow-lg hover:shadow-xl transition-shadow">
                             <div className="flex items-start gap-4 mb-4">
                                 <img
@@ -183,17 +212,36 @@ export default function Index({ ideas: initialIdeas }: Props) {
                                     <h3 className="text-lg font-bold text-[#231F20] dark:text-white mb-2 line-clamp-2 leading-tight">
                                         {idea.title}
                                     </h3>
-                                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                        <span>By {idea.user?.name || 'Unknown'}</span>
-                                        {idea.thematic_area && (
-                                            <>
-                                                <span>•</span>
-                                                <span>{idea.thematic_area.name}</span>
-                                            </>
-                                        )}
-                                    </div>
-                                    <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(idea.status)}`}>
-                                        {idea.status.replace(' ', ' ').toUpperCase()}
+                                    <div className='flex flex-wrap gap-2'>
+                                        <span className={`flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium w-fit ${
+                                            idea.status === 'draft' ? 'text-gray-600 bg-gray-200 dark:text-gray-300 dark:bg-gray-700/50' :
+                                            idea.status === 'stage 1 review' ? 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30' :
+                                            idea.status === 'stage 2 review' ? 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30' :
+                                            idea.status === 'stage 1 revise' ? 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30' :
+                                            idea.status === 'stage 2 revise' ? 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30' :
+                                            idea.status === 'approved' ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30' :
+                                            'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
+                                        }`}>
+                                            <span>By {idea.user?.name || 'Unknown'}</span>
+                                        </span>
+                                        <span className={`flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium w-fit ${
+                                            idea.status === 'draft' ? 'text-gray-600 bg-gray-200 dark:text-gray-300 dark:bg-gray-700/50' :
+                                            idea.status === 'stage 1 review' ? 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30' :
+                                            idea.status === 'stage 2 review' ? 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30' :
+                                            idea.status === 'stage 1 revise' ? 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30' :
+                                            idea.status === 'stage 2 revise' ? 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30' :
+                                            idea.status === 'approved' ? 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30' :
+                                            'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
+                                        }`}>
+                                            {idea.thematic_area && (
+                                                <>
+                                                    <span>{idea.thematic_area.name}</span>
+                                                </>
+                                            )}
+                                        </span>
+                                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(idea.status)}`}>
+                                            {idea.status}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -258,12 +306,14 @@ export default function Index({ ideas: initialIdeas }: Props) {
                     ))}
                 </div>
 
-                {ideas.length === 0 && (
+                {filteredIdeas.length === 0 && (
                     <div className="text-center py-12">
                         <Users className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">No collaboration opportunities available</h3>
+                        <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            {Object.keys(filters).length > 0 ? 'No ideas match your filters' : 'No collaboration opportunities available'}
+                        </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-500">
-                            There are currently no ideas available for collaboration.
+                            {Object.keys(filters).length > 0 ? 'Try adjusting your filters to see more ideas.' : 'There are currently no ideas available for collaboration.'}
                         </p>
                     </div>
                 )}
