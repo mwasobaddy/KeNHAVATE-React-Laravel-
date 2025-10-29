@@ -40,24 +40,27 @@ class IdeaController extends Controller
             $likedIdeaIds = IdeaLike::where('user_id', $user->id)->pluck('idea_id')->toArray();
         }
 
-        $ideas = Idea::with('user')->withTeam()->get()->map(function ($idea) use ($likedIdeaIds) {
-            return [
-                'id' => $idea->id,
-                'title' => $idea->idea_title,
-                'description' => $idea->abstract,
-                'status' => $idea->status,
-                'created_at' => $idea->created_at?->format('M d, Y'),
-                'user' => $idea->user ? ['id' => $idea->user->id, 'name' => $idea->user->name] : null,
-                'collaboration_enabled' => $idea->collaboration_enabled,
-                'team_members_count' => $idea->team_members_count ?? 0,
-                'comments_enabled' => $idea->comments_enabled,
-                'collaboration_members_count' => $idea->collaboration_members_count ?? 0,
-                'likes_count' => $idea->likes_count ?? 0,
-                'current_revision_number' => $idea->current_revision_number,
-                'slug' => $idea->slug,
-                'liked_by_user' => in_array($idea->id, $likedIdeaIds),
-            ];
-        });
+        $ideas = collect(); // Default empty collection
+        if ($user) {
+            $ideas = Idea::with('user')->withTeam()->where('user_id', $user->id)->get()->map(function ($idea) use ($likedIdeaIds) {
+                return [
+                    'id' => $idea->id,
+                    'title' => $idea->idea_title,
+                    'description' => $idea->abstract,
+                    'status' => $idea->status,
+                    'created_at' => $idea->created_at?->format('M d, Y'),
+                    'user' => $idea->user ? ['id' => $idea->user->id, 'name' => $idea->user->name] : null,
+                    'collaboration_enabled' => $idea->collaboration_enabled,
+                    'team_members_count' => $idea->team_members_count ?? 0,
+                    'comments_enabled' => $idea->comments_enabled,
+                    'collaboration_members_count' => $idea->collaboration_members_count ?? 0,
+                    'likes_count' => $idea->likes_count ?? 0,
+                    'current_revision_number' => $idea->current_revision_number,
+                    'slug' => $idea->slug,
+                    'liked_by_user' => in_array($idea->id, $likedIdeaIds),
+                ];
+            });
+        }
 
         return Inertia::render('Ideas/Index', compact('ideas'));
 
@@ -244,6 +247,44 @@ class IdeaController extends Controller
         }
 
         return $this->flashMessageToRoute('ideas.show', 'Idea updated successfully!', [$idea->slug]);
+    }
+    
+    public function publicIndex()
+    {
+        // fetch and return a list of ideas where collaboration and comments are enabled
+        $user = auth()->user();
+        $likedIdeaIds = [];
+        if ($user) {
+            $likedIdeaIds = IdeaLike::where('user_id', $user->id)->pluck('idea_id')->toArray();
+        }
+
+        $ideas = Idea::with('user')
+            ->withTeam()
+            ->where('collaboration_enabled', true)
+            ->where('comments_enabled', true)
+            ->get()
+            ->map(function ($idea) use ($likedIdeaIds, $user) {
+                return [
+                    'id' => $idea->id,
+                    'title' => $idea->idea_title,
+                    'description' => $idea->abstract,
+                    'status' => $idea->status,
+                    'created_at' => $idea->created_at?->format('M d, Y'),
+                    'user' => $idea->user ? ['id' => $idea->user->id, 'name' => $idea->user->name] : null,
+                    'collaboration_enabled' => $idea->collaboration_enabled,
+                    'team_members_count' => $idea->team_members_count ?? 0,
+                    'comments_enabled' => $idea->comments_enabled,
+                    'collaboration_members_count' => $idea->collaboration_members_count ?? 0,
+                    'likes_count' => $idea->likes_count ?? 0,
+                    'current_revision_number' => $idea->current_revision_number,
+                    'slug' => $idea->slug,
+                    'liked_by_user' => in_array($idea->id, $likedIdeaIds),
+                    'is_author' => $user && $idea->user_id === $user->id,
+                ];
+            });
+
+        return Inertia::render('Ideas/PublicIndex', compact('ideas'));
+
     }
 
     public function removeAttachment(Request $request, $slug)
