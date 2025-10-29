@@ -5,6 +5,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Users, Send, Clock, CheckCircle, XCircle, Eye, MessageSquare, Filter } from 'lucide-react';
 import { toast } from 'react-toastify';
 import AdvancedFilters from '@/components/AdvancedFilters';
+import SearchBar from '@/components/SearchBar';
 
 interface Idea {
     id: number;
@@ -45,6 +46,9 @@ export default function Index({ ideas: initialIdeas }: Props) {
     const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
     const [sendingRequests, setSendingRequests] = useState<Set<number>>(new Set());
     const [appliedFilters, setAppliedFilters] = useState<Record<string, any>>({});
+    const [searchQuery, setSearchQuery] = useState('');
+    const [thematicAreaQuery, setThematicAreaQuery] = useState('');
+    const [filtersVisible, setFiltersVisible] = useState(false);
 
     // Define filter configuration for ideas
     const filterConfig = [
@@ -60,18 +64,6 @@ export default function Index({ ideas: initialIdeas }: Props) {
                 { value: 'stage 2 revise', label: 'Stage 2 Revise' },
                 { value: 'approved', label: 'Approved' }
             ]
-        },
-        {
-            key: 'search',
-            label: 'Search',
-            type: 'search' as const,
-            placeholder: 'Search by title or description...'
-        },
-        {
-            key: 'thematic_area',
-            label: 'Thematic Area',
-            type: 'search' as const,
-            placeholder: 'Filter by thematic area...'
         }
     ];
 
@@ -80,18 +72,24 @@ export default function Index({ ideas: initialIdeas }: Props) {
     };
 
     const filteredIdeas = ideas.filter(idea => {
+        // Status filter
         if (appliedFilters.status && idea.status !== appliedFilters.status) return false;
-        if (appliedFilters.search) {
-            const searchLower = appliedFilters.search.toLowerCase();
+        
+        // Search query filter (from SearchBar)
+        if (searchQuery) {
+            const searchLower = searchQuery.toLowerCase();
             const matchesTitle = idea.title.toLowerCase().includes(searchLower);
             const matchesDescription = idea.description.toLowerCase().includes(searchLower);
             if (!matchesTitle && !matchesDescription) return false;
         }
-        if (appliedFilters.thematic_area && idea.thematic_area) {
-            if (!idea.thematic_area.name.toLowerCase().includes(appliedFilters.thematic_area.toLowerCase())) {
+        
+        // Thematic area filter
+        if (thematicAreaQuery && idea.thematic_area) {
+            if (!idea.thematic_area.name.toLowerCase().includes(thematicAreaQuery.toLowerCase())) {
                 return false;
             }
         }
+        
         return true;
     });
 
@@ -199,12 +197,34 @@ export default function Index({ ideas: initialIdeas }: Props) {
                         <div className='absolute -bottom-3 left-0 h-1 w-16 bg-gradient-to-r from-black to-[#fff200] dark:bg-gradient-to-r dark:from-[#FFF200] dark:to-[#F8EBD5] rounded-full animate-pulse'></div>
                     </div>
 
-                    {/* Navigation Links */}
-                    <div className="flex items-center gap-4">
-                        <AdvancedFilters
-                            filters={filterConfig}
-                            onFilterChange={handleFilterChange}
+                    {/* Search and Filters */}
+                    <div className="space-y-4">
+                        <SearchBar 
+                            value={searchQuery} 
+                            onChange={setSearchQuery} 
+                            placeholder="Search ideas by title or description..." 
                         />
+                        
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex-1 min-w-[200px]">
+                                <SearchBar 
+                                    value={thematicAreaQuery} 
+                                    onChange={setThematicAreaQuery} 
+                                    placeholder="Filter by thematic area..." 
+                                />
+                            </div>
+                            <AdvancedFilters
+                                filters={filterConfig}
+                                onFilterChange={handleFilterChange}
+                                visible={filtersVisible}
+                                onToggle={() => setFiltersVisible(!filtersVisible)}
+                                showToggleButton={true}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <div className="flex items-center gap-4 justify-end">
                         <Link
                             href="/collaboration/inbox"
                             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"

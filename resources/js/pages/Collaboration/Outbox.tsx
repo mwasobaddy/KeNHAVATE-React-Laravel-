@@ -4,6 +4,7 @@ import { Head, Link } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import { Send, CheckCircle, XCircle, Eye, ArrowLeft, Clock, Filter } from 'lucide-react';
 import AdvancedFilters from '@/components/AdvancedFilters';
+import SearchBar from '@/components/SearchBar';
 
 interface CollaborationRequest {
     id: number;
@@ -47,6 +48,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Outbox({ requests }: Props) {
     const [appliedFilters, setAppliedFilters] = useState<Record<string, any>>({});
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filtersVisible, setFiltersVisible] = useState(false);
 
     // Define filter configuration for outbox requests
     const filterConfig = [
@@ -59,12 +62,6 @@ export default function Outbox({ requests }: Props) {
                 { value: 'approved', label: 'Approved' },
                 { value: 'rejected', label: 'Rejected' }
             ]
-        },
-        {
-            key: 'search',
-            label: 'Search',
-            type: 'search' as const,
-            placeholder: 'Search by owner name or idea title...'
         }
     ];
 
@@ -73,9 +70,12 @@ export default function Outbox({ requests }: Props) {
     };
 
     const filteredRequests = requests.filter(request => {
+        // Status filter
         if (appliedFilters.status && request.status !== appliedFilters.status) return false;
-        if (appliedFilters.search) {
-            const searchLower = appliedFilters.search.toLowerCase();
+        
+        // Search query filter
+        if (searchQuery) {
+            const searchLower = searchQuery.toLowerCase();
             const matchesOwner = request.owner.name.toLowerCase().includes(searchLower);
             const matchesIdea = request.idea.title.toLowerCase().includes(searchLower);
             if (!matchesOwner && !matchesIdea) return false;
@@ -116,7 +116,8 @@ export default function Outbox({ requests }: Props) {
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-4">
+                    {/* Header with back button */}
+                    <div className="flex items-center justify-between mb-6">
                         <Link
                             href="/collaboration"
                             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
@@ -124,10 +125,6 @@ export default function Outbox({ requests }: Props) {
                             <ArrowLeft className="h-5 w-5" />
                             Back to Collaboration
                         </Link>
-                        <AdvancedFilters
-                            filters={filterConfig}
-                            onFilterChange={handleFilterChange}
-                        />
                         <div className="relative">
                             <h2 className="flex items-center gap-2 text-3xl md:text-4xl font-extrabold tracking-tight">
                                 <Send className='w-10 h-10 text-3xl md:text-4xl dark:text-[#fff200] font-black' />
@@ -137,6 +134,22 @@ export default function Outbox({ requests }: Props) {
                             </h2>
                             <div className='absolute -bottom-3 left-0 h-1 w-16 bg-gradient-to-r from-black to-[#fff200] dark:bg-gradient-to-r dark:from-[#FFF200] dark:to-[#F8EBD5] rounded-full animate-pulse'></div>
                         </div>
+                    </div>
+
+                    {/* Search and Filters */}
+                    <div className="space-y-4">
+                        <SearchBar 
+                            value={searchQuery} 
+                            onChange={setSearchQuery} 
+                            placeholder="Search by owner name or idea title..." 
+                        />
+                        <AdvancedFilters
+                            filters={filterConfig}
+                            onFilterChange={handleFilterChange}
+                            visible={filtersVisible}
+                            onToggle={() => setFiltersVisible(!filtersVisible)}
+                            showToggleButton={true}
+                        />
                     </div>
                 </div>
 

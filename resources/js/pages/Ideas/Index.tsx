@@ -12,7 +12,7 @@ import {
     DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import SearchBar from '@/components/SearchBar';
-import AdvancedFilters from '@/components/AdvancedFilters';
+import AdvancedFilters, { type FilterConfig } from '@/components/AdvancedFilters';
 import SelectionToolbar from '@/components/SelectionToolbar';
 import DeleteModal from '@/components/DeleteModal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -58,8 +58,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Index() {
     const { ideas } = usePage<{ ideas: Idea[] }>().props;
     const [query, setQuery] = useState('');
-    const [filtersOpen, setFiltersOpen] = useState(false);
     const [filters, setFilters] = useState<Record<string, any>>({});
+    const [filtersVisible, setFiltersVisible] = useState(false);
     const [selected, setSelected] = useState<Record<number, boolean>>({});
     const [loading, setLoading] = useState(false);
     const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
@@ -69,6 +69,37 @@ export default function Index() {
     const [singleDeleteOpen, setSingleDeleteOpen] = useState(false);
     const [singleDeleteId, setSingleDeleteId] = useState<number | null>(null);
     const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
+    const filterConfig: FilterConfig[] = [
+        {
+            key: 'status',
+            label: 'Status',
+            type: 'select',
+            options: [
+                { value: 'draft', label: 'Draft' },
+                { value: 'stage 1 review', label: 'Stage 1 Review' },
+                { value: 'stage 2 review', label: 'Stage 2 Review' },
+                { value: 'stage 1 revise', label: 'Stage 1 Revise' },
+                { value: 'stage 2 revise', label: 'Stage 2 Revise' },
+                { value: 'approved', label: 'Approved' },
+            ],
+            placeholder: 'All statuses',
+        },
+        {
+            key: 'minRevisions',
+            label: 'Min Revisions',
+            type: 'number',
+            placeholder: 'Minimum number of revisions',
+        },
+        {
+            key: 'collaboration',
+            label: 'Collaboration Enabled',
+            type: 'checkbox',
+            options: [
+                { value: 'true', label: 'Collaboration Enabled' },
+            ],
+        },
+    ];
 
     useEffect(() => {
         const start = () => setLoading(true);
@@ -98,10 +129,20 @@ export default function Index() {
 
     const filteredIdeas = useMemo(() => {
         return ideas.filter((idea) => {
+            // SearchBar filter (query)
             if (query && !`${idea.title} ${idea.description}`.toLowerCase().includes(query.toLowerCase())) return false;
+            
+            // Status filter
             if (filters.status && idea.status !== filters.status) return false;
+            
+            // Min Revisions filter
             if (filters.minRevisions && (idea.current_revision_number ?? 0) < filters.minRevisions) return false;
-            if (typeof filters.collaboration === 'boolean' && !!idea.collaboration_enabled !== filters.collaboration) return false;
+            
+            // Collaboration filter (checkbox)
+            if (filters.collaboration && Array.isArray(filters.collaboration) && filters.collaboration.includes('true')) {
+                if (!idea.collaboration_enabled) return false;
+            }
+            
             return true;
         });
     }, [ideas, query, filters]);
@@ -297,21 +338,21 @@ export default function Index() {
                     </Link>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                        <SearchBar value={query} onChange={setQuery} placeholder="Search ideas..." />
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setFiltersOpen((s) => !s)}
-                            className="px-4 py-2 bg-gray-950 text-white hover:bg-gray-800 dark:bg-gray-200 dark:text-black hover:dark:bg-gray-400 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
-                        >
-                            Filters
-                        </button>
-                    </div>
+                {/* Search Bar */}
+                <div className="w-full">
+                    <SearchBar value={query} onChange={setQuery} placeholder="Search ideas..." />
                 </div>
 
-                <AdvancedFilters open={filtersOpen} onToggle={() => setFiltersOpen(false)} onApply={(f) => { setFilters(f); setFiltersOpen(false); }} />
+                {/* Advanced Filters */}
+                <div className="w-full">
+                    <AdvancedFilters 
+                        filters={filterConfig} 
+                        onFilterChange={setFilters}
+                        visible={filtersVisible}
+                        onToggle={() => setFiltersVisible(!filtersVisible)}
+                        showToggleButton={true}
+                    />
+                </div>
 
                 <SelectionToolbar total={ideas.length} selectedCount={getSelectedIds().length} onSelectAll={onSelectAll} onExport={exportSelected} onDeleteSelected={deleteSelected} />
                 {loading ? (
