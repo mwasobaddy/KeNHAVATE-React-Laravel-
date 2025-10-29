@@ -26,7 +26,10 @@ import {
     FileText,
     Award,
     Clock,
-    Trophy
+    Trophy,
+    Inbox,
+    Send,
+    Mail
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
@@ -44,21 +47,53 @@ const getMainNavItems = (user: any): NavItem[] => {
             icon: Lightbulb,
             items: [
                 {
-                    title: 'Browse Ideas',
-                    href: '/ideas',
-                    icon: FileText,
-                },
-                {
                     title: 'Create Idea',
                     href: '/ideas/create',
                     icon: Lightbulb,
                 },
+                {
+                    title: 'Submissions',
+                    href: '/ideas/submissions',
+                    icon: FileText,
+                },
+                // {
+                //     title: 'My Ideas Status',
+                //     href: '/review/author/dashboard',
+                //     icon: Clock,
+                // },
+                {
+                    title: 'Collaboration Hub',
+                    href: '/ideas/collaboration/hub',
+                    icon: Users,
+                }
             ],
         },
         {
             title: 'Collaboration',
             href: '/collaboration',
             icon: Users,
+            items: [
+                {
+                    title: 'Inbox',
+                    href: '/collaboration/inbox',
+                    icon: Inbox,
+                },
+                {
+                    title: 'Outbox',
+                    href: '/collaboration/outbox',
+                    icon: Send,
+                },
+                {
+                    title: 'My Proposals',
+                    href: '/collaboration/my-proposals',
+                    icon: FileText,
+                },
+                {
+                    title: 'Received Proposals',
+                    href: '/collaboration/received-proposals',
+                    icon: Mail,
+                },
+            ],
         },
         {
             title: 'Challenges',
@@ -82,58 +117,57 @@ const getMainNavItems = (user: any): NavItem[] => {
     // Review section based on user roles
     const reviewItems: NavItem[] = [];
     
-    if (user?.roles?.some((role: any) => role.name === 'subject-matter-expert')) {
+    if (user?.roles?.some((role: any) => role.name === 'subject-matter-expert') ||
+        user?.roles?.some((role: any) => role.name === 'admin')) {
         reviewItems.push({
-            title: 'SME Reviews',
+            title: 'SME Idea Reviews',
             href: '/review/sme/dashboard',
             icon: UserCheck,
         });
     }
 
-    if (user?.roles?.some((role: any) => role.name === 'board')) {
+    if (user?.roles?.some((role: any) => role.name === 'board') ||
+        user?.roles?.some((role: any) => role.name === 'admin')) {
         reviewItems.push({
-            title: 'Board Reviews',
+            title: 'Board Idea   Reviews',
             href: '/review/board/dashboard',
             icon: UsersIcon,
         });
     }
 
-    if (user?.roles?.some((role: any) => role.name === 'deputy-director')) {
+    if (user?.roles?.some((role: any) => role.name === 'deputy-director') ||
+        user?.roles?.some((role: any) => role.name === 'admin')) {
         reviewItems.push({
-            title: 'DD Workflow',
+            title: 'DD Idea Workflow',
             href: '/review/dd/dashboard',
             icon: Settings,
         });
     }
 
-    // Author dashboard - available to all users
-    reviewItems.push({
-        title: 'My Ideas Status',
-        href: '/review/author/dashboard',
-        icon: Clock,
-    });
-
     // Challenge review sections based on user roles
     const challengeReviewItems: NavItem[] = [];
     
-    if (user?.roles?.some((role: any) => role.name === 'subject-matter-expert')) {
-        challengeReviewItems.push({
+    if (user?.roles?.some((role: any) => role.name === 'challenge-reviewer-expert') ||
+        user?.roles?.some((role: any) => role.name === 'admin')) {
+        reviewItems.push({
             title: 'SME Challenge Reviews',
             href: '/review/challenges/sme/dashboard',
             icon: UserCheck,
         });
     }
 
-    if (user?.roles?.some((role: any) => role.name === 'board')) {
-        challengeReviewItems.push({
+    if (user?.roles?.some((role: any) => role.name === 'board') ||
+        user?.roles?.some((role: any) => role.name === 'admin')) {
+        reviewItems.push({
             title: 'Board Challenge Reviews',
             href: '/review/challenges/board/dashboard',
             icon: UsersIcon,
         });
     }
 
-    if (user?.roles?.some((role: any) => role.name === 'deputy-director')) {
-        challengeReviewItems.push({
+    if (user?.roles?.some((role: any) => role.name === 'deputy-director') ||
+        user?.roles?.some((role: any) => role.name === 'admin')) {
+        reviewItems.push({
             title: 'DD Challenge Workflow',
             href: '/review/challenges/dd/dashboard',
             icon: Settings,
@@ -163,7 +197,9 @@ const getMainNavItems = (user: any): NavItem[] => {
     // Challenge Management section for DD and Admin
     const challengeManagementItems: NavItem[] = [];
     
-    if (user?.permissions?.some((permission: any) => permission.name === 'manage.challenges')) {
+    if (user?.permissions?.some((permission: any) => permission.name === 'manage.challenges') || 
+        user?.roles?.some((role: any) => role.name === 'admin') ||
+        user?.roles?.some((role: any) => role.name === 'deputy-director')) {
         challengeManagementItems.push(
             {
                 title: 'Manage Challenges',
