@@ -7,6 +7,10 @@ use App\Http\Controllers\Idea\IdeaController;
 use App\Http\Controllers\Idea\IdeaLikeController;
 use App\Http\Controllers\CollaborationController;
 use App\Http\Controllers\CollaborationProposalController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ChallengeController;
+use App\Http\Controllers\ChallengeSubmissionController;
+use App\Http\Controllers\ChallengeReviewController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -81,36 +85,90 @@ Route::middleware(['auth', 'verified', 'role:deputy-director'])->prefix('dd')->n
         return Inertia::render('DeputyDirector/Dashboard');
     })->name('dashboard');
     
-    // Review workflow management routes will be added here
+    // Review workflow management routes
+    Route::get('review-workflow', [ReviewController::class, 'ddWorkflowDashboard'])->name('review.dashboard');
+    Route::get('review/idea/{id}', [ReviewController::class, 'showIdeaForReview'])->name('review.idea.show');
+    Route::post('review/idea/{id}/decision', [ReviewController::class, 'makeDecision'])->name('review.idea.decision');
+    
     // User management (non-admin) routes will be added here
-    // Challenge creation routes will be added here
+    // Challenge management routes
+    Route::middleware(['permission:manage.challenges'])->prefix('challenges')->name('challenges.')->group(function () {
+        Route::get('/', [ChallengeController::class, 'index'])->name('index');
+        Route::get('create', [ChallengeController::class, 'create'])->name('create');
+        Route::post('/', [ChallengeController::class, 'store'])->name('store');
+        Route::get('{challenge}/edit', [ChallengeController::class, 'edit'])->name('edit');
+        Route::patch('{challenge}', [ChallengeController::class, 'update'])->name('update');
+        Route::delete('{challenge}', [ChallengeController::class, 'destroy'])->name('destroy');
+        Route::post('{challenge}/activate', [ChallengeController::class, 'activate'])->name('activate');
+        Route::post('{challenge}/close', [ChallengeController::class, 'close'])->name('close');
+    });
 });
 
-// Review routes for SME and Board
+// Review routes for SME, Board, DD, and Authors
 Route::middleware(['auth', 'verified'])->prefix('review')->name('review.')->group(function () {
     // SME Stage 1 Review routes
-    Route::middleware(['permission:review.ideas-stage1'])->prefix('stage1')->name('stage1.')->group(function () {
-        Route::get('/', function () {
-            return Inertia::render('Review/Stage1/Dashboard');
-        })->name('dashboard');
-        // Stage 1 review routes will be added here
+    Route::middleware(['permission:review.ideas-stage1'])->prefix('sme')->name('sme.')->group(function () {
+        Route::get('dashboard', [ReviewController::class, 'smeReviewDashboard'])->name('dashboard');
+        Route::get('idea/{slug}', [ReviewController::class, 'showIdeaForReview'])->name('idea.show');
+        Route::post('idea/{id}/review', [ReviewController::class, 'submitReview'])->name('idea.review');
     });
     
     // Board Stage 2 Review routes  
-    Route::middleware(['permission:review.ideas-stage2'])->prefix('stage2')->name('stage2.')->group(function () {
-        Route::get('/', function () {
-            return Inertia::render('Review/Stage2/Dashboard');
-        })->name('dashboard');
-        // Stage 2 review routes will be added here
+    Route::middleware(['permission:review.ideas-stage2'])->prefix('board')->name('board.')->group(function () {
+        Route::get('dashboard', [ReviewController::class, 'boardReviewDashboard'])->name('dashboard');
+        Route::get('idea/{slug}', [ReviewController::class, 'showIdeaForReview'])->name('idea.show');
+        Route::post('idea/{id}/review', [ReviewController::class, 'submitReview'])->name('idea.review');
     });
     
-    // Challenge Review routes
-    Route::middleware(['permission:review.challenge-submissions'])->prefix('challenges')->name('challenges.')->group(function () {
-        Route::get('/', function () {
-            return Inertia::render('Review/Challenges/Dashboard');
-        })->name('dashboard');
-        // Challenge review routes will be added here
+    // Deputy Director Workflow Management routes
+    Route::middleware(['permission:manage.review-decisions'])->prefix('dd')->name('dd.')->group(function () {
+        Route::get('dashboard', [ReviewController::class, 'ddWorkflowDashboard'])->name('dashboard');
+        Route::get('idea/{slug}', [ReviewController::class, 'showIdeaForReview'])->name('idea.show');
+        Route::post('decision/{id}', [ReviewController::class, 'makeDecision'])->name('decision.make');
     });
+    
+    // Author Review Status routes
+    Route::prefix('author')->name('author.')->group(function () {
+        Route::get('dashboard', [ReviewController::class, 'authorReviewDashboard'])->name('dashboard');
+        Route::get('idea/{slug}', [ReviewController::class, 'showIdeaForReview'])->name('idea.show');
+    });
+    
+    // Challenge Review routes - SME Stage 1 Reviews
+    Route::middleware(['permission:review.challenge-submissions'])->prefix('challenges/sme')->name('challenges.sme.')->group(function () {
+        Route::get('dashboard', [ChallengeReviewController::class, 'smeReviewDashboard'])->name('dashboard');
+        Route::get('submission/{submission}', [ChallengeReviewController::class, 'showSubmissionForReview'])->name('submission.show');
+        Route::post('submission/{submission}/review', [ChallengeReviewController::class, 'submitReview'])->name('submission.review');
+    });
+    
+    // Challenge Review routes - Board Stage 2 Reviews
+    Route::middleware(['permission:review.challenge-submissions'])->prefix('challenges/board')->name('challenges.board.')->group(function () {
+        Route::get('dashboard', [ChallengeReviewController::class, 'boardReviewDashboard'])->name('dashboard');
+        Route::get('submission/{submission}', [ChallengeReviewController::class, 'showSubmissionForReview'])->name('submission.show');
+        Route::post('submission/{submission}/review', [ChallengeReviewController::class, 'submitReview'])->name('submission.review');
+    });
+    
+    // Challenge Review routes - DD Workflow Management
+    Route::middleware(['permission:manage.review-decisions'])->prefix('challenges/dd')->name('challenges.dd.')->group(function () {
+        Route::get('dashboard', [ChallengeReviewController::class, 'ddWorkflowDashboard'])->name('dashboard');
+        Route::get('submission/{submission}', [ChallengeReviewController::class, 'showSubmissionForReview'])->name('submission.show');
+        Route::post('decision/{submission}', [ChallengeReviewController::class, 'makeDecision'])->name('decision.make');
+    });
+});
+
+// Challenge participation routes - Available to all authenticated users
+Route::middleware(['auth', 'verified'])->prefix('challenges')->name('challenges.')->group(function () {
+    Route::get('/', [ChallengeController::class, 'publicIndex'])->name('public.index');
+    Route::get('{challenge}', [ChallengeController::class, 'show'])->name('show');
+    Route::get('{challenge}/attachment', [ChallengeController::class, 'attachment'])->name('attachment');
+    
+    // Submission routes
+    Route::get('{challenge}/submit', [ChallengeSubmissionController::class, 'create'])->name('submit');
+    Route::post('{challenge}/submissions', [ChallengeSubmissionController::class, 'store'])->name('submissions.store');
+    Route::get('submissions/my-submissions', [ChallengeSubmissionController::class, 'mySubmissions'])->name('submissions.mine');
+    Route::get('submissions/{submission}', [ChallengeSubmissionController::class, 'show'])->name('submissions.show');
+    Route::get('submissions/{submission}/edit', [ChallengeSubmissionController::class, 'edit'])->name('submissions.edit');
+    Route::patch('submissions/{submission}', [ChallengeSubmissionController::class, 'update'])->name('submissions.update');
+    Route::get('submissions/{submission}/attachment', [ChallengeSubmissionController::class, 'attachment'])->name('submissions.attachment');
 });
 
 require __DIR__.'/settings.php';
