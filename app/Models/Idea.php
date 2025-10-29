@@ -141,4 +141,83 @@ class Idea extends Model
     {
         return $this->belongsTo(ThematicArea::class);
     }
+
+    // Review relationships
+    public function reviews()
+    {
+        return $this->hasMany(IdeaReview::class);
+    }
+
+    public function stage1Reviews()
+    {
+        return $this->hasMany(IdeaReview::class)->stage1();
+    }
+
+    public function stage2Reviews()
+    {
+        return $this->hasMany(IdeaReview::class)->stage2();
+    }
+
+    public function reviewDecisions()
+    {
+        return $this->hasMany(IdeaReviewDecision::class);
+    }
+
+    public function stage1Decisions()
+    {
+        return $this->hasMany(IdeaReviewDecision::class)->stage1();
+    }
+
+    public function stage2Decisions()
+    {
+        return $this->hasMany(IdeaReviewDecision::class)->stage2();
+    }
+
+    // Helper methods for review status
+    public function isInReview()
+    {
+        return in_array($this->status, ['stage 1 review', 'stage 2 review']);
+    }
+
+    public function isInRevision()
+    {
+        return in_array($this->status, ['stage 1 revise', 'stage 2 revise']);
+    }
+
+    public function canBeReviewedBy($user, $stage = null)
+    {
+        // Cannot review own idea
+        if ($this->user_id === $user->id) {
+            return false;
+        }
+
+        // Determine stage if not provided
+        if (!$stage) {
+            $stage = $this->status === 'stage 1 review' ? 'stage1' : 
+                    ($this->status === 'stage 2 review' ? 'stage2' : null);
+        }
+
+        if (!$stage) {
+            return false;
+        }
+
+        // Check if user has already reviewed this stage
+        $hasReviewed = $this->reviews()
+            ->where('reviewer_id', $user->id)
+            ->where('review_stage', $stage)
+            ->exists();
+
+        if ($hasReviewed) {
+            return false;
+        }
+
+        // Check user role permissions
+        if ($stage === 'stage1') {
+            return $user->hasRole('subject-matter-expert');
+        } elseif ($stage === 'stage2') {
+            return $user->hasRole('board');
+        }
+
+        return false;
+    }
 }
