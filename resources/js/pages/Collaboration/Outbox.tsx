@@ -115,42 +115,41 @@ export default function Outbox({ requests }: Props) {
             {/* Main Container */}
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-2">
-                    {/* Header with back button */}
-                    <div className="flex items-center justify-between mb-6">
-                        <Link
-                            href="/collaboration"
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-                        >
-                            <ArrowLeft className="h-5 w-5" />
-                            Back to Collaboration
-                        </Link>
-                        <div className="relative">
-                            <h2 className="flex items-center gap-2 text-3xl md:text-4xl font-extrabold tracking-tight">
-                                <Send className='w-10 h-10 text-3xl md:text-4xl dark:text-[#fff200] font-black' />
-                                <span className='bg-clip-text text-transparent bg-gradient-to-r from-black to-[#fff200] dark:bg-gradient-to-r dark:from-[#FFF200] dark:to-[#F8EBD5]'>
-                                    Outbox
-                                </span>
-                            </h2>
-                            <div className='absolute -bottom-3 left-0 h-1 w-16 bg-gradient-to-r from-black to-[#fff200] dark:bg-gradient-to-r dark:from-[#FFF200] dark:to-[#F8EBD5] rounded-full animate-pulse'></div>
-                        </div>
+                <div className="flex items-center justify-between mb-6">
+                    <Link
+                        href="/collaboration"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                        Back to Collaboration
+                    </Link>
+                    
+                    <div className="relative">
+                        <h2 className="flex items-center gap-2 text-3xl md:text-4xl font-extrabold tracking-tight">
+                            <Send className='w-10 h-10 text-3xl md:text-4xl dark:text-[#fff200] font-black' />
+                            <span className='bg-clip-text text-transparent bg-gradient-to-r from-black to-[#fff200] dark:bg-gradient-to-r dark:from-[#FFF200] dark:to-[#F8EBD5]'>
+                                Outbox
+                            </span>
+                        </h2>
+                        <div className='absolute -bottom-3 left-0 h-1 w-16 bg-gradient-to-r from-black to-[#fff200] dark:bg-gradient-to-r dark:from-[#FFF200] dark:to-[#F8EBD5] rounded-full animate-pulse'></div>
                     </div>
+                </div>
 
-                    {/* Search and Filters */}
-                    <div className="space-y-4">
-                        <SearchBar 
-                            value={searchQuery} 
-                            onChange={setSearchQuery} 
-                            placeholder="Search by owner name or idea title..." 
-                        />
-                        <AdvancedFilters
-                            filters={filterConfig}
-                            onFilterChange={handleFilterChange}
-                            visible={filtersVisible}
-                            onToggle={() => setFiltersVisible(!filtersVisible)}
-                            showToggleButton={true}
-                        />
-                    </div>
+                {/* Search and Filters */}
+                <div className="space-y-4 mb-6">
+                    <SearchBar 
+                        value={searchQuery} 
+                        onChange={setSearchQuery} 
+                        placeholder="Search by owner name or idea title..." 
+                    />
+                    
+                    <AdvancedFilters
+                        filters={filterConfig}
+                        onFilterChange={handleFilterChange}
+                        visible={filtersVisible}
+                        onToggle={() => setFiltersVisible(!filtersVisible)}
+                        showToggleButton={true}
+                    />
                 </div>
 
                 {/* Requests List */}
