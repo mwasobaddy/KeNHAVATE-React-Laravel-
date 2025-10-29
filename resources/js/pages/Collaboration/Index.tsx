@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
-import { Users, Send, Clock, CheckCircle, XCircle, Eye, MessageSquare, Filter, ChevronDown } from 'lucide-react';
+import { Users, Send, Clock, CheckCircle, XCircle, Eye, MessageSquare, Filter } from 'lucide-react';
 import { toast } from 'react-toastify';
 import AdvancedFilters from '@/components/AdvancedFilters';
 import SearchBar from '@/components/SearchBar';
@@ -54,7 +54,7 @@ export default function Index({ ideas: initialIdeas, thematicAreas }: Props) {
     const [sendingRequests, setSendingRequests] = useState<Set<number>>(new Set());
     const [appliedFilters, setAppliedFilters] = useState<Record<string, any>>({});
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedThematicArea, setSelectedThematicArea] = useState('');
+
     const [filtersVisible, setFiltersVisible] = useState(false);
 
     // Define filter configuration for ideas
@@ -82,6 +82,18 @@ export default function Index({ ideas: initialIdeas, thematicAreas }: Props) {
                 { value: 'pending', label: 'Request Pending' },
                 { value: 'approved', label: 'Request Approved' },
                 { value: 'rejected', label: 'Request Rejected' }
+            ]
+        },
+        {
+            key: 'thematicArea',
+            label: 'Thematic Area',
+            type: 'select' as const,
+            options: [
+                { value: '', label: 'All Thematic Areas' },
+                ...thematicAreas.map(area => ({
+                    value: area.id.toString(),
+                    label: area.name
+                }))
             ]
         },
         {
@@ -172,8 +184,8 @@ export default function Index({ ideas: initialIdeas, thematicAreas }: Props) {
         }
         
         // Thematic area filter
-        if (selectedThematicArea && idea.thematic_area) {
-            if (idea.thematic_area.id.toString() !== selectedThematicArea) {
+        if (appliedFilters.thematicArea && idea.thematic_area) {
+            if (idea.thematic_area.id.toString() !== appliedFilters.thematicArea) {
                 return false;
             }
         }
@@ -312,30 +324,13 @@ export default function Index({ ideas: initialIdeas, thematicAreas }: Props) {
                         placeholder="Search ideas by title, description, or author..." 
                     />
                     
-                    <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex-1 min-w-[200px] relative">
-                            <select
-                                value={selectedThematicArea}
-                                onChange={(e) => setSelectedThematicArea(e.target.value)}
-                                className="w-full px-4 py-2 pr-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
-                            >
-                                <option value="">All Thematic Areas</option>
-                                {thematicAreas.map((area) => (
-                                    <option key={area.id} value={area.id.toString()}>
-                                        {area.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                        </div>
-                        <AdvancedFilters
-                            filters={filterConfig}
-                            onFilterChange={handleFilterChange}
-                            visible={filtersVisible}
-                            onToggle={() => setFiltersVisible(!filtersVisible)}
-                            showToggleButton={true}
-                        />
-                    </div>
+                    <AdvancedFilters
+                        filters={filterConfig}
+                        onFilterChange={handleFilterChange}
+                        visible={filtersVisible}
+                        onToggle={() => setFiltersVisible(!filtersVisible)}
+                        showToggleButton={true}
+                    />
                 </div>
 
                 {/* Ideas Grid */}
