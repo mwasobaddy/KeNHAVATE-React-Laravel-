@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Idea;
 use App\Models\CollaborationRequest;
+use App\Models\ThematicArea;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -46,7 +47,13 @@ class CollaborationController extends Controller
                 ];
             });
 
-        return Inertia::render('Collaboration/Index', compact('ideas'));
+        // Get active thematic areas for the dropdown
+        $thematicAreas = ThematicArea::active()
+            ->ordered()
+            ->select('id', 'name', 'slug')
+            ->get();
+
+        return Inertia::render('Collaboration/Index', compact('ideas', 'thematicAreas'));
     }
 
     /**

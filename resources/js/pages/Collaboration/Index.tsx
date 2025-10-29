@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
-import { Users, Send, Clock, CheckCircle, XCircle, Eye, MessageSquare, Filter } from 'lucide-react';
+import { Users, Send, Clock, CheckCircle, XCircle, Eye, MessageSquare, Filter, ChevronDown } from 'lucide-react';
 import { toast } from 'react-toastify';
 import AdvancedFilters from '@/components/AdvancedFilters';
 import SearchBar from '@/components/SearchBar';
@@ -27,8 +27,15 @@ interface Idea {
     request_status: string | null;
 }
 
+interface ThematicArea {
+    id: number;
+    name: string;
+    slug: string;
+}
+
 interface Props {
     ideas: Idea[];
+    thematicAreas: ThematicArea[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -42,12 +49,12 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Index({ ideas: initialIdeas }: Props) {
+export default function Index({ ideas: initialIdeas, thematicAreas }: Props) {
     const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
     const [sendingRequests, setSendingRequests] = useState<Set<number>>(new Set());
     const [appliedFilters, setAppliedFilters] = useState<Record<string, any>>({});
     const [searchQuery, setSearchQuery] = useState('');
-    const [thematicAreaQuery, setThematicAreaQuery] = useState('');
+    const [selectedThematicArea, setSelectedThematicArea] = useState('');
     const [filtersVisible, setFiltersVisible] = useState(false);
 
     // Define filter configuration for ideas
@@ -165,8 +172,8 @@ export default function Index({ ideas: initialIdeas }: Props) {
         }
         
         // Thematic area filter
-        if (thematicAreaQuery && idea.thematic_area) {
-            if (!idea.thematic_area.name.toLowerCase().includes(thematicAreaQuery.toLowerCase())) {
+        if (selectedThematicArea && idea.thematic_area) {
+            if (idea.thematic_area.id.toString() !== selectedThematicArea) {
                 return false;
             }
         }
@@ -306,12 +313,20 @@ export default function Index({ ideas: initialIdeas }: Props) {
                     />
                     
                     <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex-1 min-w-[200px]">
-                            <SearchBar 
-                                value={thematicAreaQuery} 
-                                onChange={setThematicAreaQuery} 
-                                placeholder="Filter by thematic area..." 
-                            />
+                        <div className="flex-1 min-w-[200px] relative">
+                            <select
+                                value={selectedThematicArea}
+                                onChange={(e) => setSelectedThematicArea(e.target.value)}
+                                className="w-full px-4 py-2 pr-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
+                            >
+                                <option value="">All Thematic Areas</option>
+                                {thematicAreas.map((area) => (
+                                    <option key={area.id} value={area.id.toString()}>
+                                        {area.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                         </div>
                         <AdvancedFilters
                             filters={filterConfig}
