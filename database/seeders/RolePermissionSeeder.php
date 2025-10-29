@@ -192,22 +192,22 @@ class RolePermissionSeeder extends Seeder
     {
         // Create Admin user
         $admin = User::create([
-            'name' => 'System Administrator',
-            'slug' => 'system-administrator',
-            'username' => 'admin',
-            'email' => 'admin@kenhavate.com',
-            'password' => bcrypt('password'),
+            'name' => 'Kelvin Mwangi',
+            'slug' => 'kelvin-mwangi',
+            'username' => 'system_admin',
+            'email' => 'kelvinramsiel@gmail.com',
+            'password' => bcrypt('kelvin1234'),
             'email_verified_at' => now(),
         ]);
         $admin->assignRole($adminRole);
 
         // Create Deputy Director
         $dd = User::create([
-            'name' => 'Deputy Director',
-            'slug' => 'deputy-director',
+            'name' => 'Kelvin Mwangi 2',
+            'slug' => 'kelvin-mwangi-2',
             'username' => 'deputy_director',
-            'email' => 'dd@kenhavate.com',
-            'password' => bcrypt('password'),
+            'email' => 'kelvinramsiel01@gmail.com',
+            'password' => bcrypt('kelvin1234'),
             'email_verified_at' => now(),
         ]);
         $dd->assignRole($ddRole);
