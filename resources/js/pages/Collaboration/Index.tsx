@@ -54,7 +54,7 @@ export default function Index({ ideas: initialIdeas }: Props) {
     const filterConfig = [
         {
             key: 'status',
-            label: 'Status',
+            label: 'Idea Status',
             type: 'select' as const,
             options: [
                 { value: 'draft', label: 'Draft' },
@@ -62,9 +62,42 @@ export default function Index({ ideas: initialIdeas }: Props) {
                 { value: 'stage 2 review', label: 'Stage 2 Review' },
                 { value: 'stage 1 revise', label: 'Stage 1 Revise' },
                 { value: 'stage 2 revise', label: 'Stage 2 Revise' },
-                { value: 'approved', label: 'Approved' }
+                { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Rejected' }
             ]
-        }
+        },
+        {
+            key: 'requestStatus',
+            label: 'Collaboration Status',
+            type: 'select' as const,
+            options: [
+                { value: 'none', label: 'Available for Request' },
+                { value: 'pending', label: 'Request Pending' },
+                { value: 'approved', label: 'Request Approved' },
+                { value: 'rejected', label: 'Request Rejected' }
+            ]
+        },
+        {
+            key: 'createdAfter',
+            label: 'Created After',
+            type: 'date' as const,
+            placeholder: 'Show ideas created after this date',
+        },
+        {
+            key: 'createdBefore',
+            label: 'Created Before',
+            type: 'date' as const,
+            placeholder: 'Show ideas created before this date',
+        },
+        {
+            key: 'hasThematicArea',
+            label: 'Filters',
+            type: 'checkbox' as const,
+            options: [
+                { value: 'has_thematic_area', label: 'Has Thematic Area' },
+                { value: 'has_user', label: 'Has Known Author' },
+            ],
+        },
     ];
 
     const handleFilterChange = (newFilters: Record<string, any>) => {
@@ -72,15 +105,63 @@ export default function Index({ ideas: initialIdeas }: Props) {
     };
 
     const filteredIdeas = ideas.filter(idea => {
-        // Status filter
+        // Idea Status filter
         if (appliedFilters.status && idea.status !== appliedFilters.status) return false;
+        
+        // Collaboration Request Status filter
+        if (appliedFilters.requestStatus) {
+            switch (appliedFilters.requestStatus) {
+                case 'none':
+                    if (idea.has_pending_request || idea.request_status) return false;
+                    break;
+                case 'pending':
+                    if (!idea.has_pending_request || idea.request_status !== 'pending') return false;
+                    break;
+                case 'approved':
+                    if (idea.request_status !== 'approved') return false;
+                    break;
+                case 'rejected':
+                    if (idea.request_status !== 'rejected') return false;
+                    break;
+            }
+        }
+        
+        // Created After filter
+        if (appliedFilters.createdAfter) {
+            const ideaDate = new Date(idea.created_at);
+            const filterDate = new Date(appliedFilters.createdAfter);
+            if (ideaDate < filterDate) return false;
+        }
+        
+        // Created Before filter
+        if (appliedFilters.createdBefore) {
+            const ideaDate = new Date(idea.created_at);
+            const filterDate = new Date(appliedFilters.createdBefore);
+            filterDate.setHours(23, 59, 59, 999); // End of day
+            if (ideaDate > filterDate) return false;
+        }
+        
+        // Checkbox filters
+        if (appliedFilters.hasThematicArea && Array.isArray(appliedFilters.hasThematicArea) && appliedFilters.hasThematicArea.length > 0) {
+            for (const filter of appliedFilters.hasThematicArea) {
+                switch (filter) {
+                    case 'has_thematic_area':
+                        if (!idea.thematic_area) return false;
+                        break;
+                    case 'has_user':
+                        if (!idea.user) return false;
+                        break;
+                }
+            }
+        }
         
         // Search query filter (from SearchBar)
         if (searchQuery) {
             const searchLower = searchQuery.toLowerCase();
             const matchesTitle = idea.title.toLowerCase().includes(searchLower);
             const matchesDescription = idea.description.toLowerCase().includes(searchLower);
-            if (!matchesTitle && !matchesDescription) return false;
+            const matchesAuthor = idea.user?.name.toLowerCase().includes(searchLower);
+            if (!matchesTitle && !matchesDescription && !matchesAuthor) return false;
         }
         
         // Thematic area filter
@@ -186,7 +267,7 @@ export default function Index({ ideas: initialIdeas }: Props) {
             {/* Main Container */}
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-6">
                     <div className="relative">
                         <h2 className="flex items-center gap-2 text-3xl md:text-4xl font-extrabold tracking-tight">
                             <Users className='w-10 h-10 text-3xl md:text-4xl dark:text-[#fff200] font-black' />
@@ -197,34 +278,8 @@ export default function Index({ ideas: initialIdeas }: Props) {
                         <div className='absolute -bottom-3 left-0 h-1 w-16 bg-gradient-to-r from-black to-[#fff200] dark:bg-gradient-to-r dark:from-[#FFF200] dark:to-[#F8EBD5] rounded-full animate-pulse'></div>
                     </div>
 
-                    {/* Search and Filters */}
-                    <div className="space-y-4">
-                        <SearchBar 
-                            value={searchQuery} 
-                            onChange={setSearchQuery} 
-                            placeholder="Search ideas by title or description..." 
-                        />
-                        
-                        <div className="flex flex-wrap items-center gap-4">
-                            <div className="flex-1 min-w-[200px]">
-                                <SearchBar 
-                                    value={thematicAreaQuery} 
-                                    onChange={setThematicAreaQuery} 
-                                    placeholder="Filter by thematic area..." 
-                                />
-                            </div>
-                            <AdvancedFilters
-                                filters={filterConfig}
-                                onFilterChange={handleFilterChange}
-                                visible={filtersVisible}
-                                onToggle={() => setFiltersVisible(!filtersVisible)}
-                                showToggleButton={true}
-                            />
-                        </div>
-                    </div>
-
                     {/* Navigation Links */}
-                    <div className="flex items-center gap-4 justify-end">
+                    <div className="flex items-center gap-4">
                         <Link
                             href="/collaboration/inbox"
                             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
@@ -239,6 +294,32 @@ export default function Index({ ideas: initialIdeas }: Props) {
                             <Send className="h-4 w-4" />
                             Outbox
                         </Link>
+                    </div>
+                </div>
+
+                {/* Search and Filters */}
+                <div className="space-y-4 mb-6">
+                    <SearchBar 
+                        value={searchQuery} 
+                        onChange={setSearchQuery} 
+                        placeholder="Search ideas by title, description, or author..." 
+                    />
+                    
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex-1 min-w-[200px]">
+                            <SearchBar 
+                                value={thematicAreaQuery} 
+                                onChange={setThematicAreaQuery} 
+                                placeholder="Filter by thematic area..." 
+                            />
+                        </div>
+                        <AdvancedFilters
+                            filters={filterConfig}
+                            onFilterChange={handleFilterChange}
+                            visible={filtersVisible}
+                            onToggle={() => setFiltersVisible(!filtersVisible)}
+                            showToggleButton={true}
+                        />
                     </div>
                 </div>
 
@@ -352,17 +433,36 @@ export default function Index({ ideas: initialIdeas }: Props) {
                     ))}
                 </div>
 
-                {filteredIdeas.length === 0 && (
-                    <div className="text-center py-12">
-                        <Users className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">
-                            {Object.keys(appliedFilters).length > 0 ? 'No ideas match your filters' : 'No collaboration opportunities available'}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-500">
-                            {Object.keys(appliedFilters).length > 0 ? 'Try adjusting your filters to see more ideas.' : 'There are currently no ideas available for collaboration.'}
+                {/* Results Summary */}
+                {filteredIdeas.length > 0 && (
+                    <div className="text-center mb-4">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Showing {filteredIdeas.length} of {ideas.length} collaboration opportunities
                         </p>
                     </div>
                 )}
+
+                {ideas.length === 0 ? (
+                    <div className="text-center py-12">
+                        <Users className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            No collaboration opportunities available
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-500">
+                            There are currently no ideas available for collaboration.
+                        </p>
+                    </div>
+                ) : filteredIdeas.length === 0 ? (
+                    <div className="text-center py-12">
+                        <Users className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                            No ideas match your search or filters
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-500">
+                            Try adjusting your search terms or filters to see more collaboration opportunities.
+                        </p>
+                    </div>
+                ) : null}
             </div>
         </AppLayout>
     );
