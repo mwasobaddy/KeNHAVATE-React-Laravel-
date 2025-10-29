@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
+import reviewRoutes from '@/routes/review';
 import { 
     ClipboardList,
     Eye,
@@ -187,7 +188,7 @@ export default function ChallengeBoardDashboard({ submissionsForReview, reviewed
                                 <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pending_count}</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.pending_count || 0}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Pending Review</p>
                             </div>
                         </div>
@@ -199,7 +200,7 @@ export default function ChallengeBoardDashboard({ submissionsForReview, reviewed
                                 <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.reviewed_count}</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.reviewed_count || 0}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Completed Reviews</p>
                             </div>
                         </div>
@@ -211,7 +212,7 @@ export default function ChallengeBoardDashboard({ submissionsForReview, reviewed
                                 <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_reviews}</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.total_reviews || 0}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Reviews</p>
                             </div>
                         </div>
@@ -223,7 +224,7 @@ export default function ChallengeBoardDashboard({ submissionsForReview, reviewed
                                 <Trophy className="h-6 w-6 text-orange-600 dark:text-orange-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.avg_reviews_per_submission.toFixed(1)}</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{(stats?.avg_reviews_per_submission || 0).toFixed(1)}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Avg Reviews/Submission</p>
                             </div>
                         </div>
@@ -347,7 +348,7 @@ export default function ChallengeBoardDashboard({ submissionsForReview, reviewed
                                     </div>
                                     <div className="flex items-center justify-end gap-3">
                                         <Link
-                                            href={route('challenges.board.submission.show', submission.id)}
+                                            href={reviewRoutes.challenges.board.submission.show(submission.id).url}
                                             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#FFF200] text-[#231F20] hover:bg-yellow-400 transition-all font-medium"
                                         >
                                             <Eye className="h-4 w-4" />
@@ -443,7 +444,7 @@ export default function ChallengeBoardDashboard({ submissionsForReview, reviewed
                                     </div>
                                     <div className="flex items-center justify-end gap-3">
                                         <Link
-                                            href={route('challenges.board.submission.show', submission.id)}
+                                            href={reviewRoutes.challenges.board.submission.show(submission.id).url}
                                             className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm"
                                         >
                                             <Eye className="h-4 w-4" />

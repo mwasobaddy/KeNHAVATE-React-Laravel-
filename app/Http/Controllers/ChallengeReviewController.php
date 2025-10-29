@@ -47,8 +47,8 @@ class ChallengeReviewController extends Controller
                 ->count(),
         ];
 
-        return Inertia::render('Challenges/Review/SME/Dashboard', [
-            'pendingSubmissions' => $pendingSubmissions,
+        return Inertia::render('Review/Challenges/SME/Dashboard', [
+            'submissionsForReview' => $pendingSubmissions,
             'reviewedSubmissions' => $reviewedSubmissions,
             'stats' => $stats,
         ]);
@@ -79,17 +79,22 @@ class ChallengeReviewController extends Controller
             ->limit(10)
             ->get();
 
+        $pendingCount = $pendingSubmissions->count();
+        $reviewedCount = ChallengeSubmissionReview::where('reviewer_id', $user->id)
+            ->where('review_stage', 'stage 2')
+            ->count();
+        $totalReviews = ChallengeSubmissionReview::where('review_stage', 'stage 2')->count();
+        $totalSubmissions = ChallengeSubmission::whereIn('status', ['stage 2 review', 'approved', 'rejected'])->count();
+        
         $stats = [
-            'pending_reviews' => $pendingSubmissions->count(),
-            'completed_reviews' => ChallengeSubmissionReview::where('reviewer_id', $user->id)
-                ->where('review_stage', 'stage 2')
-                ->count(),
-            'total_submissions' => ChallengeSubmission::whereIn('status', ['stage 2 review', 'approved', 'rejected'])
-                ->count(),
+            'pending_count' => $pendingCount,
+            'reviewed_count' => $reviewedCount,
+            'total_reviews' => $totalReviews,
+            'avg_reviews_per_submission' => $totalSubmissions > 0 ? $totalReviews / $totalSubmissions : 0,
         ];
 
-        return Inertia::render('Challenges/Review/Board/Dashboard', [
-            'pendingSubmissions' => $pendingSubmissions,
+        return Inertia::render('Review/Challenges/Board/Dashboard', [
+            'submissionsForReview' => $pendingSubmissions,
             'reviewedSubmissions' => $reviewedSubmissions,
             'stats' => $stats,
         ]);
@@ -140,10 +145,10 @@ class ChallengeReviewController extends Controller
             'stage1_pending' => $stage1Submissions->count(),
             'stage2_pending' => $stage2Submissions->count(),
             'decisions_made' => ChallengeSubmissionReviewDecision::where('decided_by', auth()->id())->count(),
-            'total_processed' => ChallengeSubmission::whereIn('status', ['approved', 'rejected'])->count(),
+            'total_submissions_processed' => ChallengeSubmission::whereIn('status', ['approved', 'rejected'])->count(),
         ];
 
-        return Inertia::render('Challenges/Review/DD/Dashboard', [
+        return Inertia::render('Review/Challenges/DD/Dashboard', [
             'stage1Submissions' => $stage1Submissions,
             'stage2Submissions' => $stage2Submissions,
             'completedSubmissions' => $completedSubmissions,
@@ -167,11 +172,25 @@ class ChallengeReviewController extends Controller
 
         $userRole = $this->getUserReviewRole();
         $canReview = $this->canUserReviewSubmission($submission, $userRole);
+        
+        // Check if user has already reviewed this submission
+        $userReview = null;
+        $hasReviewed = false;
+        
+        if ($userRole === 'sme') {
+            $userReview = $submission->stage1Reviews->where('reviewer_id', auth()->id())->first();
+        } elseif ($userRole === 'board') {
+            $userReview = $submission->stage2Reviews->where('reviewer_id', auth()->id())->first();
+        }
+        
+        $hasReviewed = $userReview !== null;
 
-        return Inertia::render('Challenges/Review/SubmissionDetail', [
+        return Inertia::render('Review/Challenges/SubmissionReview', [
             'submission' => $submission,
-            'userRole' => $userRole,
+            'reviewStage' => $userRole,
             'canReview' => $canReview,
+            'hasReviewed' => $hasReviewed,
+            'userReview' => $userReview,
         ]);
     }
 

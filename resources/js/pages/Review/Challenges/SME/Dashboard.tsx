@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
+import reviewRoutes from '@/routes/review';
 import { 
     ClipboardList,
     Eye,
@@ -309,7 +310,7 @@ export default function ChallengeSMEDashboard({ submissionsForReview, reviewedSu
                                     </div>
                                     <div className="flex items-center justify-end gap-3">
                                         <Link
-                                            href={route('challenges.sme.submission.show', submission.id)}
+                                            href={reviewRoutes.challenges.sme.submission.show(submission.id).url}
                                             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#FFF200] text-[#231F20] hover:bg-yellow-400 transition-all font-medium"
                                         >
                                             <Eye className="h-4 w-4" />
@@ -401,7 +402,7 @@ export default function ChallengeSMEDashboard({ submissionsForReview, reviewedSu
                                     </div>
                                     <div className="flex items-center justify-end gap-3">
                                         <Link
-                                            href={route('challenges.sme.submission.show', submission.id)}
+                                            href={reviewRoutes.challenges.sme.submission.show(submission.id).url}
                                             className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm"
                                         >
                                             <Eye className="h-4 w-4" />

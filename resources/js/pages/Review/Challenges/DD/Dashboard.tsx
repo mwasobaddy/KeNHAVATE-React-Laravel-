@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
+import reviewRoutes from '@/routes/review';
 import { 
     ClipboardList,
     Eye,
@@ -204,7 +205,7 @@ export default function ChallengeDDWorkflow({ stage1Submissions, stage2Submissio
         setIsSubmitting(true);
 
         try {
-            await router.post(route('challenges.dd.decision.make', selectedSubmission.id), {
+            await router.post(reviewRoutes.challenges.dd.decision.make(selectedSubmission.id).url, {
                 decision,
                 compiled_comments: compiledComments,
                 dd_comments: ddComments,
@@ -327,7 +328,7 @@ export default function ChallengeDDWorkflow({ stage1Submissions, stage2Submissio
                     </div>
                     <div className="flex gap-2">
                         <Link
-                            href={route('challenges.dd.submission.show', submission.id)}
+                            href={reviewRoutes.challenges.dd.submission.show(submission.id).url}
                             className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm"
                         >
                             <Eye className="h-4 w-4" />
@@ -375,7 +376,7 @@ export default function ChallengeDDWorkflow({ stage1Submissions, stage2Submissio
                                 <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.stage1_pending}</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.stage1_pending || 0}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Stage 1 Pending</p>
                             </div>
                         </div>
@@ -387,7 +388,7 @@ export default function ChallengeDDWorkflow({ stage1Submissions, stage2Submissio
                                 <Clock className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.stage2_pending}</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.stage2_pending || 0}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Stage 2 Pending</p>
                             </div>
                         </div>
@@ -399,7 +400,7 @@ export default function ChallengeDDWorkflow({ stage1Submissions, stage2Submissio
                                 <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.decisions_made}</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.decisions_made || 0}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Decisions Made</p>
                             </div>
                         </div>
@@ -411,7 +412,7 @@ export default function ChallengeDDWorkflow({ stage1Submissions, stage2Submissio
                                 <Trophy className="h-6 w-6 text-orange-600 dark:text-orange-400" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total_submissions_processed}</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.total_submissions_processed || 0}</p>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Processed</p>
                             </div>
                         </div>

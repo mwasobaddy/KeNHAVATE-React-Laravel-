@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
+import reviewRoutes from '@/routes/review';
+import challengesRoutes from '@/routes/challenges';
 import { 
     ArrowLeft,
     Eye,
@@ -84,6 +86,32 @@ export default function ChallengeSubmissionReview({ submission, reviewStage, can
     const [rating, setRating] = useState(5);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const getDashboardUrl = () => {
+        switch (reviewStage) {
+            case 'sme':
+                return reviewRoutes.challenges.sme.dashboard().url;
+            case 'board':
+                return reviewRoutes.challenges.board.dashboard().url;
+            case 'dd':
+                return reviewRoutes.challenges.dd.dashboard().url;
+            default:
+                return '#';
+        }
+    };
+
+    const getSubmissionReviewUrl = (submissionId: number) => {
+        switch (reviewStage) {
+            case 'sme':
+                return reviewRoutes.challenges.sme.submission.review(submissionId).url;
+            case 'board':
+                return reviewRoutes.challenges.board.submission.review(submissionId).url;
+            case 'dd':
+                return reviewRoutes.challenges.dd.submission.show(submissionId).url;
+            default:
+                return '#';
+        }
+    };
+
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Home',
@@ -95,7 +123,7 @@ export default function ChallengeSubmissionReview({ submission, reviewStage, can
         },
         {
             title: `${reviewStage.toUpperCase()} Dashboard`,
-            href: route(`challenges.${reviewStage}.dashboard`),
+            href: getDashboardUrl(),
         },
         {
             title: 'Review Submission',
@@ -181,7 +209,7 @@ export default function ChallengeSubmissionReview({ submission, reviewStage, can
         setIsSubmitting(true);
 
         try {
-            await router.post(route(`challenges.${reviewStage}.submission.review`, submission.id), {
+            await router.post(getSubmissionReviewUrl(submission.id), {
                 recommendation,
                 comments,
                 rating,
@@ -207,7 +235,7 @@ export default function ChallengeSubmissionReview({ submission, reviewStage, can
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
                         <Link
-                            href={route(`challenges.${reviewStage}.dashboard`)}
+                            href={getDashboardUrl()}
                             className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm"
                         >
                             <ArrowLeft className="h-4 w-4" />
@@ -350,7 +378,7 @@ export default function ChallengeSubmissionReview({ submission, reviewStage, can
                             <div className="bg-white dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Attachment</h3>
                                 <Link
-                                    href={route('challenges.submissions.attachment', submission.id)}
+                                    href={challengesRoutes.submissions.attachment(submission.id).url}
                                     className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
                                 >
                                     <Download className="h-4 w-4" />
@@ -424,7 +452,7 @@ export default function ChallengeSubmissionReview({ submission, reviewStage, can
                                     <button
                                         onClick={submitReview}
                                         disabled={isSubmitting || !comments.trim()}
-                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#FFF200] text-[#231F20] rounded-lg hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-started transition-all font-medium"
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#FFF200] text-[#231F20] rounded-lg hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
                                     >
                                         <Send className="h-4 w-4" />
                                         {isSubmitting ? 'Submitting...' : 'Submit Review'}
