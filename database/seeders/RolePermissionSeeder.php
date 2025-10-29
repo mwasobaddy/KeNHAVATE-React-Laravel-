@@ -43,6 +43,7 @@ class RolePermissionSeeder extends Seeder
             'review.ideas-stage1',
             'review.ideas-stage2',
             'manage.idea-workflow',
+            'manage.review-decisions',
             'comment.on-ideas',
             'trigger.stage1-revise',
             'trigger.stage2-review',
@@ -53,6 +54,7 @@ class RolePermissionSeeder extends Seeder
             'oversee.review-process',
 
             // Challenge Management
+            'manage.challenges',
             'create.challenges',
             'edit.challenges',
             'delete.challenges',
@@ -99,6 +101,7 @@ class RolePermissionSeeder extends Seeder
             // Ideas workflow management
             'view.all-ideas',
             'manage.idea-workflow',
+            'manage.review-decisions',
             'comment.on-ideas',
             'trigger.stage1-revise',
             'trigger.stage2-review',
@@ -109,6 +112,7 @@ class RolePermissionSeeder extends Seeder
             'oversee.review-process',
             
             // Challenge management
+            'manage.challenges',
             'create.challenges',
             'edit.challenges',
             'delete.challenges',

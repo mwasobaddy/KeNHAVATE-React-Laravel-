@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             TeamMemberSeeder::class,
             CollaborationMemberSeeder::class,
             IdeaLikeSeeder::class,
+            ReviewSeeder::class,
         ]);
     }
 }
