@@ -106,6 +106,16 @@ class Idea extends Model
         return $this->hasMany(CollaborationRequest::class);
     }
 
+    public function collaborationProposals()
+    {
+        return $this->hasMany(CollaborationProposal::class);
+    }
+
+    public function versions()
+    {
+        return $this->hasMany(IdeaVersion::class);
+    }
+
     /**
      * Scope to eager load team members and include the count.
      */

@@ -402,10 +402,13 @@ export default function Index({ ideas: initialIdeas, thematicAreas }: Props) {
                                 </Link>
 
                                 {idea.request_status === 'approved' ? (
-                                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-sm font-medium">
+                                    <Link
+                                        href={`/collaboration/${idea.slug}/propose`}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-all text-sm font-medium"
+                                    >
                                         <CheckCircle className="h-4 w-4" />
-                                        Approved
-                                    </div>
+                                        Collaborate
+                                    </Link>
                                 ) : idea.request_status === 'rejected' ? (
                                     <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-sm font-medium">
                                         <XCircle className="h-4 w-4" />

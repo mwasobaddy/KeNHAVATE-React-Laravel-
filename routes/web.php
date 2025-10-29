@@ -6,6 +6,7 @@ use Laravel\Fortify\Features;
 use App\Http\Controllers\Idea\IdeaController;
 use App\Http\Controllers\Idea\IdeaLikeController;
 use App\Http\Controllers\CollaborationController;
+use App\Http\Controllers\CollaborationProposalController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -44,6 +45,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('collaboration/inbox', [CollaborationController::class, 'inbox'])->name('collaboration.inbox');
     Route::get('collaboration/outbox', [CollaborationController::class, 'outbox'])->name('collaboration.outbox');
     Route::post('collaboration/requests/{requestId}/respond', [CollaborationController::class, 'respond'])->name('collaboration.respond');
+    
+    // Collaboration Proposal routes
+    Route::get('collaboration/{ideaSlug}/propose', [CollaborationProposalController::class, 'create'])->name('collaboration.propose');
+    Route::post('collaboration/{ideaSlug}/propose', [CollaborationProposalController::class, 'store'])->name('collaboration.propose.store');
+    Route::get('collaboration/{ideaSlug}/review', [CollaborationProposalController::class, 'review'])->name('collaboration.review');
+    Route::post('collaboration/proposals/{proposal}/respond', [CollaborationProposalController::class, 'respond'])->name('collaboration.proposal.respond');
+    Route::post('collaboration/{ideaSlug}/rollback', [CollaborationProposalController::class, 'rollback'])->name('collaboration.rollback');
 });
 
 require __DIR__.'/settings.php';
