@@ -456,7 +456,7 @@ export default function Index() {
                     />
                 </div>
 
-                <SelectionToolbar total={ideas.length} selectedCount={getSelectedIds().length} onSelectAll={onSelectAll} onExport={exportSelected} onDeleteSelected={deleteSelected} />
+                <SelectionToolbar total={filteredIdeas.length} selectedCount={getSelectedIds().length} onSelectAll={onSelectAll} onExport={exportSelected} onDeleteSelected={deleteSelected} />
                 {loading ? (
                     <div className="flex flex-col gap-6">
                         {Array.from({ length: 4 }).map((_, i) => (
@@ -492,9 +492,15 @@ export default function Index() {
                         <h3 className="text-xl font-bold mt-6 text-[#231F20] dark:text-white">No ideas yet</h3>
                         <p className="text-sm text-[#9B9EA4] mt-2">Start by creating your first idea.</p>
                     </div>
+                ) : filteredIdeas.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full py-16">
+                        <PlaceholderPattern className="w-32 h-32 opacity-20" />
+                        <h3 className="text-xl font-bold mt-6 text-[#231F20] dark:text-white">No ideas match your filters</h3>
+                        <p className="text-sm text-[#9B9EA4] mt-2">Try adjusting your search or filter criteria.</p>
+                    </div>
                 ) : (
                     <div className="flex flex-col gap-6">
-                        {ideas.map((idea) => {
+                        {filteredIdeas.map((idea) => {
                             return (
                                 <div
                                     key={idea.id}
