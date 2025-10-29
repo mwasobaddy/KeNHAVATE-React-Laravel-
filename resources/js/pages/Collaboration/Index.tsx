@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
-import { Users, Send, Clock, CheckCircle, XCircle, Eye, MessageSquare, Filter } from 'lucide-react';
+import { Users, Send, Clock, CheckCircle, XCircle, Eye, MessageSquare, Filter, GitBranch } from 'lucide-react';
 import { toast } from 'react-toastify';
 import AdvancedFilters from '@/components/AdvancedFilters';
 import SearchBar from '@/components/SearchBar';
@@ -312,6 +312,20 @@ export default function Index({ ideas: initialIdeas, thematicAreas }: Props) {
                         >
                             <Send className="h-4 w-4" />
                             Outbox
+                        </Link>
+                        <Link
+                            href="/collaboration/my-proposals"
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                        >
+                            <GitBranch className="h-4 w-4" />
+                            My Proposals
+                        </Link>
+                        <Link
+                            href="/collaboration/received-proposals"
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                        >
+                            <Users className="h-4 w-4" />
+                            Received
                         </Link>
                     </div>
                 </div>

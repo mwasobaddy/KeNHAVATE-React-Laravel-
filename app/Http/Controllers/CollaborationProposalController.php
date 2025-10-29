@@ -293,4 +293,218 @@ class CollaborationProposalController extends Controller
             'message' => "Successfully rolled back to version {$version->version_number}!",
         ]);
     }
+
+    /**
+     * Show collaborator's own proposals.
+     */
+    public function myProposals()
+    {
+        $proposals = CollaborationProposal::with(['idea', 'originalAuthor', 'reviewedBy'])
+            ->where('collaborator_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($proposal) {
+                return [
+                    'id' => $proposal->id,
+                    'idea' => [
+                        'id' => $proposal->idea->id,
+                        'title' => $proposal->idea->idea_title,
+                        'slug' => $proposal->idea->slug,
+                    ],
+                    'original_author' => [
+                        'id' => $proposal->originalAuthor->id,
+                        'name' => $proposal->originalAuthor->name,
+                    ],
+                    'change_summary' => $proposal->change_summary,
+                    'status' => $proposal->status,
+                    'created_at' => $proposal->created_at->format('M d, Y'),
+                    'reviewed_at' => $proposal->reviewed_at ? $proposal->reviewed_at->format('M d, Y') : null,
+                    'reviewed_by' => $proposal->reviewedBy ? $proposal->reviewedBy->name : null,
+                    'review_notes' => $proposal->review_notes,
+                ];
+            });
+
+        return Inertia::render('Collaboration/MyProposals', [
+            'proposals' => $proposals,
+        ]);
+    }
+
+    /**
+     * Show specific proposal details.
+     */
+    public function show(CollaborationProposal $proposal)
+    {
+        // Check authorization
+        if ($proposal->collaborator_id !== Auth::id() && $proposal->original_author_id !== Auth::id()) {
+            return redirect()->back()->with('error', 'You are not authorized to view this proposal.');
+        }
+
+        $proposal->load(['idea', 'collaborator', 'originalAuthor', 'reviewedBy', 'proposedThematicArea']);
+        $thematicAreas = ThematicArea::active()->ordered()->get();
+
+        return Inertia::render('Collaboration/ProposalDetails', [
+            'proposal' => [
+                'id' => $proposal->id,
+                'idea' => [
+                    'id' => $proposal->idea->id,
+                    'title' => $proposal->idea->idea_title,
+                    'slug' => $proposal->idea->slug,
+                    'abstract' => $proposal->idea->abstract,
+                    'problem_statement' => $proposal->idea->problem_statement,
+                    'proposed_solution' => $proposal->idea->proposed_solution,
+                    'cost_benefit_analysis' => $proposal->idea->cost_benefit_analysis,
+                    'declaration_of_interests' => $proposal->idea->declaration_of_interests,
+                    'thematic_area' => $proposal->idea->thematicArea ? [
+                        'id' => $proposal->idea->thematicArea->id,
+                        'name' => $proposal->idea->thematicArea->name,
+                    ] : null,
+                ],
+                'collaborator' => [
+                    'id' => $proposal->collaborator->id,
+                    'name' => $proposal->collaborator->name,
+                ],
+                'original_author' => [
+                    'id' => $proposal->originalAuthor->id,
+                    'name' => $proposal->originalAuthor->name,
+                ],
+                'proposed_idea_title' => $proposal->proposed_idea_title,
+                'proposed_thematic_area_id' => $proposal->proposed_thematic_area_id,
+                'proposed_abstract' => $proposal->proposed_abstract,
+                'proposed_problem_statement' => $proposal->proposed_problem_statement,
+                'proposed_solution' => $proposal->proposed_solution,
+                'proposed_cost_benefit_analysis' => $proposal->proposed_cost_benefit_analysis,
+                'proposed_declaration_of_interests' => $proposal->proposed_declaration_of_interests,
+                'proposed_thematic_area' => $proposal->proposedThematicArea ? [
+                    'id' => $proposal->proposedThematicArea->id,
+                    'name' => $proposal->proposedThematicArea->name,
+                ] : null,
+                'collaboration_notes' => $proposal->collaboration_notes,
+                'change_summary' => $proposal->change_summary,
+                'changed_fields' => $proposal->changed_fields,
+                'status' => $proposal->status,
+                'review_notes' => $proposal->review_notes,
+                'created_at' => $proposal->created_at->format('M d, Y g:i A'),
+                'reviewed_at' => $proposal->reviewed_at ? $proposal->reviewed_at->format('M d, Y g:i A') : null,
+                'reviewed_by' => $proposal->reviewedBy ? $proposal->reviewedBy->name : null,
+            ],
+            'thematicAreas' => $thematicAreas,
+            'isAuthor' => $proposal->original_author_id === Auth::id(),
+        ]);
+    }
+
+    /**
+     * Show author's received proposals.
+     */
+    public function receivedProposals()
+    {
+        $proposals = CollaborationProposal::with(['idea', 'collaborator'])
+            ->where('original_author_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('idea_id')
+            ->map(function ($ideaProposals) {
+                $idea = $ideaProposals->first()->idea;
+                return [
+                    'idea' => [
+                        'id' => $idea->id,
+                        'title' => $idea->idea_title,
+                        'slug' => $idea->slug,
+                    ],
+                    'proposals_count' => $ideaProposals->count(),
+                    'pending_count' => $ideaProposals->where('status', 'pending')->count(),
+                    'accepted_count' => $ideaProposals->where('status', 'accepted')->count(),
+                    'rejected_count' => $ideaProposals->where('status', 'rejected')->count(),
+                    'latest_proposal' => [
+                        'id' => $ideaProposals->first()->id,
+                        'collaborator_name' => $ideaProposals->first()->collaborator->name,
+                        'change_summary' => $ideaProposals->first()->change_summary,
+                        'status' => $ideaProposals->first()->status,
+                        'created_at' => $ideaProposals->first()->created_at->format('M d, Y'),
+                    ],
+                    'all_proposals' => $ideaProposals->map(function ($proposal) {
+                        return [
+                            'id' => $proposal->id,
+                            'collaborator_name' => $proposal->collaborator->name,
+                            'change_summary' => $proposal->change_summary,
+                            'status' => $proposal->status,
+                            'created_at' => $proposal->created_at->format('M d, Y'),
+                        ];
+                    })->values(),
+                ];
+            })->values();
+
+        return Inertia::render('Collaboration/ReceivedProposals', [
+            'proposalGroups' => $proposals,
+        ]);
+    }
+
+    /**
+     * Show idea management page with versions and proposals.
+     */
+    public function manage($ideaSlug)
+    {
+        $idea = Idea::with(['user', 'thematicArea'])
+            ->where('slug', $ideaSlug)
+            ->firstOrFail();
+
+        if ($idea->user_id !== Auth::id()) {
+            return redirect()->back()->with('error', 'You can only manage your own ideas.');
+        }
+
+        $proposals = CollaborationProposal::with(['collaborator', 'proposedThematicArea'])
+            ->where('idea_id', $idea->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $versions = IdeaVersion::with(['changedBy'])
+            ->where('idea_id', $idea->id)
+            ->orderBy('version_number', 'desc')
+            ->get()
+            ->map(function ($version) {
+                return [
+                    'id' => $version->id,
+                    'version_number' => $version->version_number,
+                    'change_description' => $version->change_description,
+                    'changed_by' => $version->changedBy ? $version->changedBy->name : 'System',
+                    'created_at' => $version->created_at->format('M d, Y g:i A'),
+                    'changed_fields' => $version->changed_fields,
+                ];
+            });
+
+        return Inertia::render('Collaboration/ManageIdea', [
+            'idea' => [
+                'id' => $idea->id,
+                'title' => $idea->idea_title,
+                'slug' => $idea->slug,
+                'abstract' => $idea->abstract,
+                'problem_statement' => $idea->problem_statement,
+                'proposed_solution' => $idea->proposed_solution,
+                'cost_benefit_analysis' => $idea->cost_benefit_analysis,
+                'declaration_of_interests' => $idea->declaration_of_interests,
+                'current_revision_number' => $idea->current_revision_number,
+                'thematic_area' => $idea->thematicArea ? [
+                    'id' => $idea->thematicArea->id,
+                    'name' => $idea->thematicArea->name,
+                ] : null,
+                'user' => [
+                    'id' => $idea->user->id,
+                    'name' => $idea->user->name,
+                ],
+            ],
+            'proposals' => $proposals->map(function ($proposal) {
+                return [
+                    'id' => $proposal->id,
+                    'collaborator' => [
+                        'id' => $proposal->collaborator->id,
+                        'name' => $proposal->collaborator->name,
+                    ],
+                    'change_summary' => $proposal->change_summary,
+                    'status' => $proposal->status,
+                    'created_at' => $proposal->created_at->format('M d, Y'),
+                    'reviewed_at' => $proposal->reviewed_at ? $proposal->reviewed_at->format('M d, Y') : null,
+                ];
+            }),
+            'versions' => $versions,
+        ]);
+    }
 }

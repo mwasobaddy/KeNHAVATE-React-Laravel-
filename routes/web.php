@@ -52,6 +52,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('collaboration/{ideaSlug}/review', [CollaborationProposalController::class, 'review'])->name('collaboration.review');
     Route::post('collaboration/proposals/{proposal}/respond', [CollaborationProposalController::class, 'respond'])->name('collaboration.proposal.respond');
     Route::post('collaboration/{ideaSlug}/rollback', [CollaborationProposalController::class, 'rollback'])->name('collaboration.rollback');
+    
+    // Collaboration Management routes
+    Route::get('collaboration/my-proposals', [CollaborationProposalController::class, 'myProposals'])->name('collaboration.my-proposals');
+    Route::get('collaboration/proposals/{proposal}', [CollaborationProposalController::class, 'show'])->name('collaboration.proposal.show');
+    Route::get('collaboration/received-proposals', [CollaborationProposalController::class, 'receivedProposals'])->name('collaboration.received-proposals');
+    Route::get('collaboration/manage/{ideaSlug}', [CollaborationProposalController::class, 'manage'])->name('collaboration.manage');
 });
 
 require __DIR__.'/settings.php';
