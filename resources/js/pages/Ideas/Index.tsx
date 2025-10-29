@@ -37,9 +37,16 @@ interface Idea {
     liked_by_user?: boolean;
     collaboration_enabled?: boolean;
     comments_enabled?: boolean;
-    attachment_filename: string;
+    team_effort?: boolean;
+    original_idea_disclaimer?: boolean;
+    collaboration_deadline?: string;
+    attachment_filename?: string;
     attachment_size?: number;
     attachment_mime?: string;
+    thematic_area?: {
+        id: number;
+        name: string;
+    } | null;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -82,6 +89,7 @@ export default function Index() {
                 { value: 'stage 1 revise', label: 'Stage 1 Revise' },
                 { value: 'stage 2 revise', label: 'Stage 2 Revise' },
                 { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Rejected' },
             ],
             placeholder: 'All statuses',
         },
@@ -92,11 +100,55 @@ export default function Index() {
             placeholder: 'Minimum number of revisions',
         },
         {
-            key: 'collaboration',
-            label: 'Collaboration Enabled',
+            key: 'maxRevisions',
+            label: 'Max Revisions',
+            type: 'number',
+            placeholder: 'Maximum number of revisions',
+        },
+        {
+            key: 'collaborationDeadline',
+            label: 'Collaboration Deadline',
+            type: 'date',
+            placeholder: 'Filter by collaboration deadline',
+        },
+        {
+            key: 'createdAfter',
+            label: 'Created After',
+            type: 'date',
+            placeholder: 'Show ideas created after this date',
+        },
+        {
+            key: 'createdBefore',
+            label: 'Created Before',
+            type: 'date',
+            placeholder: 'Show ideas created before this date',
+        },
+        {
+            key: 'thematicArea',
+            label: 'Thematic Area',
+            type: 'select',
+            options: [
+                // These would typically come from a thematic areas API or props
+                // For now, adding common ones - should be dynamic
+                { value: '1', label: 'Technology & Innovation' },
+                { value: '2', label: 'Healthcare & Medicine' },
+                { value: '3', label: 'Education & Learning' },
+                { value: '4', label: 'Environment & Sustainability' },
+                { value: '5', label: 'Business & Economics' },
+                { value: '6', label: 'Social Impact' },
+            ],
+            placeholder: 'All thematic areas',
+        },
+        {
+            key: 'features',
+            label: 'Features',
             type: 'checkbox',
             options: [
-                { value: 'true', label: 'Collaboration Enabled' },
+                { value: 'collaboration_enabled', label: 'Collaboration Enabled' },
+                { value: 'comments_enabled', label: 'Comments Enabled' },
+                { value: 'team_effort', label: 'Team Effort' },
+                { value: 'original_idea_disclaimer', label: 'Original Idea Disclaimer' },
+                { value: 'has_attachment', label: 'Has Attachment' },
             ],
         },
     ];
@@ -135,12 +187,62 @@ export default function Index() {
             // Status filter
             if (filters.status && idea.status !== filters.status) return false;
             
+            // Thematic Area filter
+            if (filters.thematicArea && idea.thematic_area) {
+                if (idea.thematic_area.id.toString() !== filters.thematicArea) return false;
+            } else if (filters.thematicArea && !idea.thematic_area) {
+                return false; // Filter requires thematic area but idea doesn't have one
+            }
+            
             // Min Revisions filter
             if (filters.minRevisions && (idea.current_revision_number ?? 0) < filters.minRevisions) return false;
             
-            // Collaboration filter (checkbox)
-            if (filters.collaboration && Array.isArray(filters.collaboration) && filters.collaboration.includes('true')) {
-                if (!idea.collaboration_enabled) return false;
+            // Max Revisions filter
+            if (filters.maxRevisions && (idea.current_revision_number ?? 0) > filters.maxRevisions) return false;
+            
+            // Collaboration Deadline filter
+            if (filters.collaborationDeadline && idea.collaboration_deadline) {
+                const ideaDate = new Date(idea.collaboration_deadline);
+                const filterDate = new Date(filters.collaborationDeadline);
+                if (ideaDate.toDateString() !== filterDate.toDateString()) return false;
+            }
+            
+            // Created After filter
+            if (filters.createdAfter) {
+                const ideaDate = new Date(idea.created_at);
+                const filterDate = new Date(filters.createdAfter);
+                if (ideaDate < filterDate) return false;
+            }
+            
+            // Created Before filter
+            if (filters.createdBefore) {
+                const ideaDate = new Date(idea.created_at);
+                const filterDate = new Date(filters.createdBefore);
+                filterDate.setHours(23, 59, 59, 999); // End of day
+                if (ideaDate > filterDate) return false;
+            }
+            
+            // Features filter (checkbox array)
+            if (filters.features && Array.isArray(filters.features) && filters.features.length > 0) {
+                for (const feature of filters.features) {
+                    switch (feature) {
+                        case 'collaboration_enabled':
+                            if (!idea.collaboration_enabled) return false;
+                            break;
+                        case 'comments_enabled':
+                            if (!idea.comments_enabled) return false;
+                            break;
+                        case 'team_effort':
+                            if (!idea.team_effort) return false;
+                            break;
+                        case 'original_idea_disclaimer':
+                            if (!idea.original_idea_disclaimer) return false;
+                            break;
+                        case 'has_attachment':
+                            if (!idea.attachment_filename) return false;
+                            break;
+                    }
+                }
             }
             
             return true;
@@ -474,20 +576,54 @@ export default function Index() {
                                                 className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-300"
                                             />
                                         </div>
+                                        <div className="flex mt-2 gap-2 text-sm text-[#9B9EA4] items-center">
+                                            <span>Team Effort :</span>
+                                            <span className={`px-2 py-1 rounded-full text-xs ${idea.team_effort ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-700/30 dark:text-gray-400'}`}>
+                                                {idea.team_effort ? 'Yes' : 'No'}
+                                            </span>
+                                        </div>
+                                        {idea.collaboration_deadline && (
+                                            <div className="flex mt-2 gap-2 text-sm text-[#9B9EA4]">
+                                                <span>Deadline :</span>
+                                                <span className="text-orange-600 dark:text-orange-400 font-medium">
+                                                    {new Date(idea.collaboration_deadline).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {idea.thematic_area && (
+                                            <div className="flex mt-2 gap-2 text-sm text-[#9B9EA4]">
+                                                <span>Thematic Area :</span>
+                                                <span className="text-blue-600 dark:text-blue-400 font-medium">
+                                                    {idea.thematic_area.name}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* 30% Secondary - Stats section with gray/secondary colors */}
                                     <div className="mt-6 flex flex-col space-x-0 xl:space-x-4 justify-between gap-4 xl:gap-0">
-                                        <div className='flex space-y-2 sm:space-y-0 sm:space-x-2 pb-4 border-b border-gray-200 dark:border-gray-700'>
+                                        <div className='flex flex-wrap space-y-2 sm:space-y-0 sm:space-x-2 pb-4 border-b border-gray-200 dark:border-gray-700'>
                                             <div className="w-fit flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 border-r border-gray-300 dark:border-gray-700 px-4 first:pl-0">
                                                 <span className="font-medium">Revisions:</span> {idea.current_revision_number ?? 0}
                                             </div>
                                             <div className="w-fit flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 border-r border-gray-300 dark:border-gray-700 px-4">
                                                 <span className="font-medium">Team:</span> {idea.team_members_count ?? 0}
                                             </div>
-                                            <div className="w-fit flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 px-4">
+                                            <div className="w-fit flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 border-r border-gray-300 dark:border-gray-700 px-4">
                                                 <span className="font-medium">Collabos:</span> {idea.collaboration_members_count ?? 0}
                                             </div>
+                                            {idea.attachment_filename && (
+                                                <div className="w-fit flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 border-r border-gray-300 dark:border-gray-700 px-4">
+                                                    <span className="font-medium">Attachment:</span> 
+                                                    <span className="text-green-600 dark:text-green-400">✓</span>
+                                                </div>
+                                            )}
+                                            {idea.original_idea_disclaimer && (
+                                                <div className="w-fit flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 px-4">
+                                                    <span className="font-medium">Original:</span> 
+                                                    <span className="text-blue-600 dark:text-blue-400">✓</span>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* 10% Accent - Action buttons with primary yellow */}
