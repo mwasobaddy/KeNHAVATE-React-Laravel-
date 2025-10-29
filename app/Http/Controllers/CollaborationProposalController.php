@@ -22,6 +22,11 @@ class CollaborationProposalController extends Controller
             ->where('slug', $ideaSlug)
             ->firstOrFail();
 
+        // Authorization check
+        if (!auth()->user()->can('submit.collaboration-proposals')) {
+            return redirect()->back()->with('error', 'You do not have permission to submit collaboration proposals.');
+        }
+
         // Check if user is authorized to collaborate
         if ($idea->user_id === Auth::id()) {
             return redirect()->back()->with('error', 'You cannot collaborate on your own idea.');
@@ -29,6 +34,11 @@ class CollaborationProposalController extends Controller
 
         if (!$idea->collaboration_enabled) {
             return redirect()->back()->with('error', 'This idea is not open for collaboration.');
+        }
+
+        // Business rule: SME cannot collaborate on ideas in stage 1 review to avoid conflict of interest
+        if ($idea->status === 'stage 1 review' && auth()->user()->hasRole('subject-matter-expert')) {
+            return redirect()->back()->with('error', 'SME cannot collaborate on ideas currently under Stage 1 review.');
         }
 
         $thematicAreas = ThematicArea::active()->ordered()->get();
@@ -116,7 +126,13 @@ class CollaborationProposalController extends Controller
             ->where('slug', $ideaSlug)
             ->firstOrFail();
 
-        if ($idea->user_id !== Auth::id()) {
+        // Authorization check: Must have permission to manage collaboration proposals
+        if (!auth()->user()->can('manage.collaboration-proposals')) {
+            return redirect()->back()->with('error', 'You do not have permission to manage collaboration proposals.');
+        }
+
+        // Business rule: Only idea owner can review proposals (or admin/DD)
+        if ($idea->user_id !== Auth::id() && !auth()->user()->hasRole(['admin', 'deputy-director'])) {
             return redirect()->back()->with('error', 'You can only review proposals for your own ideas.');
         }
 

@@ -148,10 +148,12 @@ class IdeaController extends Controller
         if (!$idea) {
             return $this->flashMessageToRoute('ideas.index', 'Idea not found.', [], 'error');
         }
-        // Check ownership
-        if ($idea->user_id !== Auth::id()) {
+        
+        // Authorization check using gate
+        if (!auth()->user()->can('edit-idea', $idea)) {
             return $this->flashMessageToRoute('ideas.index', 'You do not have permission to edit this idea.', [], 'error');
         }
+        
         $thematicAreas = ThematicArea::active()->ordered()->get(['id', 'name']);
         return Inertia::render('Ideas/Edit', compact('idea', 'thematicAreas'));
     }
@@ -162,9 +164,10 @@ class IdeaController extends Controller
         if (!$idea) {
             return response()->json(['message' => 'Idea not found'], 404);
         }
-        // Check ownership
-        if ($idea->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Forbidden'], 403);
+        
+        // Authorization check using gate
+        if (!auth()->user()->can('edit-idea', $idea)) {
+            return response()->json(['message' => 'You do not have permission to edit this idea'], 403);
         }
 
         $rules = [
@@ -297,9 +300,9 @@ class IdeaController extends Controller
             return response()->json(['message' => 'Idea not found'], 404);
         }
 
-        // simple ownership/admin check: allow if owner or user has 'admin' role (assumption)
-        if ($idea->user_id !== $user->id && (!$user->role || $user->role !== 'admin')) {
-            return response()->json(['message' => 'Forbidden'], 403);
+        // Authorization check using gate
+        if (!$user->can('delete-idea', $idea)) {
+            return response()->json(['message' => 'You do not have permission to delete this idea'], 403);
         }
 
         if (($idea->status ?? '') === 'draft') {

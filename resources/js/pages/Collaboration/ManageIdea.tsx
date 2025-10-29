@@ -17,6 +17,7 @@ import {
     History
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import ConfirmModal from '@/components/ConfirmModal';
 
 interface Idea {
     id: number;
@@ -83,13 +84,22 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function ManageIdea({ idea, proposals, versions }: Props) {
     const [activeTab, setActiveTab] = useState<'proposals' | 'versions'>('proposals');
     const [rollingBack, setRollingBack] = useState<number | null>(null);
+    const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+    const [versionToRollback, setVersionToRollback] = useState<number | null>(null);
 
-    const handleRollback = async (versionNumber: number) => {
-        if (!confirm(`Are you sure you want to rollback to version ${versionNumber}? This will create a new version and cannot be undone.`)) {
+    const handleRollbackRequest = (versionNumber: number) => {
+        setVersionToRollback(versionNumber);
+        setConfirmModalOpen(true);
+    };
+
+    const handleConfirmRollback = async () => {
+        if (!versionToRollback) {
+            setConfirmModalOpen(false);
             return;
         }
 
-        setRollingBack(versionNumber);
+        setConfirmModalOpen(false);
+        setRollingBack(versionToRollback);
 
         try {
             const response = await fetch(`/collaboration/${idea.slug}/rollback`, {
@@ -99,7 +109,7 @@ export default function ManageIdea({ idea, proposals, versions }: Props) {
                     'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
                 },
                 body: JSON.stringify({
-                    version_number: versionNumber,
+                    version_number: versionToRollback,
                 }),
             });
 
@@ -117,7 +127,13 @@ export default function ManageIdea({ idea, proposals, versions }: Props) {
             toast.error('Failed to rollback');
         } finally {
             setRollingBack(null);
+            setVersionToRollback(null);
         }
+    };
+
+    const handleCancelRollback = () => {
+        setConfirmModalOpen(false);
+        setVersionToRollback(null);
     };
 
     const getStatusIcon = (status: string) => {
@@ -371,7 +387,7 @@ export default function ManageIdea({ idea, proposals, versions }: Props) {
                                     {version.version_number !== idea.current_revision_number && (
                                         <div className="flex items-center justify-end">
                                             <button
-                                                onClick={() => handleRollback(version.version_number)}
+                                                onClick={() => handleRollbackRequest(version.version_number)}
                                                 disabled={rollingBack === version.version_number}
                                                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition disabled:opacity-50 text-sm"
                                             >
@@ -395,6 +411,16 @@ export default function ManageIdea({ idea, proposals, versions }: Props) {
                     </div>
                 )}
             </div>
+            
+            <ConfirmModal
+                open={confirmModalOpen}
+                title="Confirm Rollback"
+                body={`Are you sure you want to rollback to version ${versionToRollback}? This will create a new version and cannot be undone.`}
+                confirmLabel="Rollback"
+                cancelLabel="Cancel"
+                onConfirm={handleConfirmRollback}
+                onCancel={handleCancelRollback}
+            />
         </AppLayout>
     );
 }
