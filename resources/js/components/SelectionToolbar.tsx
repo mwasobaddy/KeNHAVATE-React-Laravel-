@@ -5,19 +5,20 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 interface Props {
     total: number;
     selectedCount: number;
+    currentPageCount: number;
     onSelectAll: (checked: boolean) => void;
     onExport: (format: 'csv' | 'pdf' | 'docx') => void;
     onDeleteSelected: () => void;
     onSelectAllInDatabase?: () => void;
 }
 
-export default function SelectionToolbar({ total, selectedCount, onSelectAll, onExport, onDeleteSelected, onSelectAllInDatabase }: Props) {
+export default function SelectionToolbar({ total, selectedCount, currentPageCount, onSelectAll, onExport, onDeleteSelected, onSelectAllInDatabase }: Props) {
     const [allChecked, setAllChecked] = useState(false);
 
     useEffect(() => {
-        // if everything selected set allChecked true, if none selected false, otherwise indeterminate visually via CSS (or keep false)
-        setAllChecked(selectedCount > 0 && selectedCount === total);
-    }, [selectedCount, total]);
+        // if everything on current page selected set allChecked true, if none selected false, otherwise indeterminate visually via CSS (or keep false)
+        setAllChecked(selectedCount > 0 && selectedCount === currentPageCount);
+    }, [selectedCount, currentPageCount]);
 
     function toggleAll(e: React.ChangeEvent<HTMLInputElement>) {
         const checked = e.target.checked;
@@ -33,7 +34,7 @@ export default function SelectionToolbar({ total, selectedCount, onSelectAll, on
                     <span className="text-sm text-[#231F20] dark:text-[#F8EBD5]">Select all</span>
                 </label>
 
-                {selectedCount === 1 && onSelectAllInDatabase && (
+                {allChecked && onSelectAllInDatabase && (
                     <button
                         onClick={onSelectAllInDatabase}
                         className="text-sm text-blue-600 hover:text-blue-800 underline hover:no-underline transition-colors"

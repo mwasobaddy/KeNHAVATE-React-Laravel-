@@ -611,7 +611,7 @@ export default function Index() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Manage Ideas" />
             {/* 60% Background - Light: white, Dark: gray-900 */}
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[50px]">
                 {/* Header with add idea button at the end */}
                 <div className="flex items-center justify-between mb-2">
                     <div className="relative mb-2">
@@ -652,7 +652,7 @@ export default function Index() {
                     />
                 </div>
 
-                <SelectionToolbar total={ideas.total} selectedCount={getSelectedIds().length} onSelectAll={onSelectAll} onExport={exportSelected} onDeleteSelected={deleteSelected} onSelectAllInDatabase={onSelectAllInDatabase} />
+                <SelectionToolbar total={ideas.total} selectedCount={getSelectedIds().length} currentPageCount={ideas.data.length} onSelectAll={onSelectAll} onExport={exportSelected} onDeleteSelected={deleteSelected} onSelectAllInDatabase={onSelectAllInDatabase} />
                 {loading ? (
                     <div className="flex flex-col gap-6">
                         {Array.from({ length: 4 }).map((_, i) => (
