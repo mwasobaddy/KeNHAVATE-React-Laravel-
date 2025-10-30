@@ -547,7 +547,7 @@ export default function Index() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Collaboration Hub" />
             {/* 60% Background - Light: white, Dark: gray-900 */}
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[50px]">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-2">
                     <div className="relative mb-2">
