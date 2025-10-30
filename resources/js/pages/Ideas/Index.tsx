@@ -291,6 +291,46 @@ export default function Index() {
         setSelected(map);
     }
 
+    async function onSelectAllInDatabase() {
+        try {
+            // Make a request to get all idea IDs for the current user with current filters
+            const params = new URLSearchParams();
+            
+            if (query) params.set('search', query);
+            if (Object.keys(filters).length > 0) {
+                Object.entries(filters).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined && value !== '') {
+                        if (Array.isArray(value)) {
+                            value.forEach(v => params.append(`${key}[]`, v));
+                        } else {
+                            params.set(key, value.toString());
+                        }
+                    }
+                });
+            }
+            
+            // Set a very high limit to get all IDs
+            params.set('per_page', '10000'); // Assuming no user has more than 10k ideas
+            
+            const response = await fetch(`${ideasRoutes.index.url()}?${params.toString()}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const allIds = data.data.map((idea: any) => idea.id);
+                const map: Record<number, boolean> = {};
+                allIds.forEach((id: number) => (map[id] = true));
+                setSelected(map);
+            }
+        } catch (error) {
+            console.error('Failed to select all items:', error);
+        }
+    }
+
     function onSelectOne(id: number, checked: boolean) {
         setSelected((s) => ({ ...s, [id]: checked }));
     }
@@ -588,7 +628,7 @@ export default function Index() {
                     />
                 </div>
 
-                <SelectionToolbar total={ideas.data.length} selectedCount={getSelectedIds().length} onSelectAll={onSelectAll} onExport={exportSelected} onDeleteSelected={deleteSelected} />
+                <SelectionToolbar total={ideas.total} selectedCount={getSelectedIds().length} onSelectAll={onSelectAll} onExport={exportSelected} onDeleteSelected={deleteSelected} onSelectAllInDatabase={onSelectAllInDatabase} />
                 {loading ? (
                     <div className="flex flex-col gap-6">
                         {Array.from({ length: 4 }).map((_, i) => (

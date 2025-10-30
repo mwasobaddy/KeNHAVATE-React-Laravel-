@@ -8,9 +8,10 @@ interface Props {
     onSelectAll: (checked: boolean) => void;
     onExport: (format: 'csv' | 'pdf' | 'docx') => void;
     onDeleteSelected: () => void;
+    onSelectAllInDatabase?: () => void;
 }
 
-export default function SelectionToolbar({ total, selectedCount, onSelectAll, onExport, onDeleteSelected }: Props) {
+export default function SelectionToolbar({ total, selectedCount, onSelectAll, onExport, onDeleteSelected, onSelectAllInDatabase }: Props) {
     const [allChecked, setAllChecked] = useState(false);
 
     useEffect(() => {
@@ -31,6 +32,15 @@ export default function SelectionToolbar({ total, selectedCount, onSelectAll, on
                     <input aria-label="Select all items" type="checkbox" checked={allChecked} onChange={toggleAll} className="mr-2 h-4 w-4 rounded border-[#9B9EA4]/30" />
                     <span className="text-sm text-[#231F20] dark:text-[#F8EBD5]">Select all</span>
                 </label>
+
+                {selectedCount === 1 && onSelectAllInDatabase && (
+                    <button
+                        onClick={onSelectAllInDatabase}
+                        className="text-sm text-blue-600 hover:text-blue-800 underline hover:no-underline transition-colors"
+                    >
+                        select all ({total}) items
+                    </button>
+                )}
 
                 <span className="text-sm text-[#9B9EA4]">{selectedCount} selected</span>
             </div>
