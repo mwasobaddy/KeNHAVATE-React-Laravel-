@@ -20,25 +20,112 @@ class RolePermissionSeeder extends Seeder
 
         // Create permissions
         $permissions = [
-            // System Management
+            // Dashboard
+            'admin-stats', //for admin users to view comprehensive stats
+            'idea-review-stats', //for idea reviewers and board members
+            'basic-stats', //for basic users to view general stats
+            'dd-stats', //for deputy directors to view comprehensive stats
+            'challenge-review-stats', //for challenge reviewers
+            
+            // User Management
             'manage.users',
+            'create.users',
+            'edit.users',
+            'view.users',
+            'soft-delete.users',
+            'permanent-delete.users',
+            'restore.users',
+        
+            // User Roles and Permissions
+            'manage.user-roles',
+            'create.user-roles',
+            'edit.user-roles',
+            'view.user-roles',
+            'soft-delete.user-roles',
+            'permanent-delete.user-roles',
+            'restore.user-roles',
+            'manage.user-permissions',
+            'create.user-permissions',
+            'edit.user-permissions',
+            'view.user-permissions',
+            'soft-delete.user-permissions',
+            'permanent-delete.user-permissions',
+            'restore.user-permissions',
+
+            // Admin Users Management
             'manage.admin-users',
+            'create.admin-users',
+            'edit.admin-users',
+            'view.admin-users',
+            'soft-delete.admin-users',
+            'permanent-delete.admin-users',
+            'restore.admin-users',
+
+            // Regions Management
             'manage.regions',
-            'manage.directorates', 
+            'create.regions',
+            'edit.regions',
+            'view.regions',
+            'soft-delete.regions',
+            'permanent-delete.regions',
+            'restore.regions',
+
+            // Directorates Management
+            'manage.directorates',
+            'create.directorates',
+            'edit.directorates',
+            'view.directorates',
+            'soft-delete.directorates',
+            'permanent-delete.directorates',
+            'restore.directorates',
+
+            // Departments Management
             'manage.departments',
+            'create.departments',
+            'edit.departments',
+            'view.departments',
+            'soft-delete.departments',
+            'permanent-delete.departments',
+            'restore.departments',
+
+            // System Settings Management
             'manage.system-settings',
+            'create.system-settings',
+            'edit.system-settings',
+            'view.system-settings',
+            'soft-delete.system-settings',
+            'permanent-delete.system-settings',
+            'restore.system-settings',
+
+            // Audit Logs
+            'manage.audit-logs',
+            'view.audit-logs',
+            'soft-delete.audit-logs',
+            'restore.audit-logs',
+            'permanent-delete.audit-logs',
+
+            // Soft Delete and Restore Any Resource
             'soft-delete.any',
             'permanent-delete.any',
+            'restore.any',
 
             // Ideas Management
+            // Own Ideas
+            'manage.own-ideas',
             'create.ideas',
             'edit.own-ideas',
-            'edit.any-ideas',
-            'delete.own-ideas',
-            'delete.any-ideas',
-            'view.all-ideas',
             'view.own-ideas',
-            
+            'soft-delete.own-ideas',
+            'permanent-delete.own-ideas',
+            'restore.own-ideas',
+
+            // Any Ideas
+            'edit.any-ideas', //no one should have this permission except admins
+            'view.any-ideas', //no one should have this permission except admins
+            'soft-delete.any-ideas', //no one should have this permission except admins
+            'permanent-delete.any-ideas', //no one should have this permission except admins
+            'restore.any-ideas', //no one should have this permission except admins
+
             // Review Process - Ideas
             'review.ideas-stage1',
             'review.ideas-stage2',
@@ -57,7 +144,9 @@ class RolePermissionSeeder extends Seeder
             'manage.challenges',
             'create.challenges',
             'edit.challenges',
-            'delete.challenges',
+            'soft-delete.challenges',
+            'permanent-delete.challenges',
+            'restore.challenges',
             'participate.challenges',
             'review.challenge-submissions',
             'comment.on-challenges',
@@ -91,15 +180,18 @@ class RolePermissionSeeder extends Seeder
         // 2. Deputy Director Role - Management and workflow oversight
         $ddRole = Role::create(['name' => 'deputy-director']);
         $ddRole->givePermissionTo([
+            // Dashboard Stats
+            'dd-stats',
+
             // User management (except admins)
+            'manage.system-settings',
             'manage.users',
             'manage.regions',
             'manage.directorates',
             'manage.departments',
-            'soft-delete.any',
             
             // Ideas workflow management
-            'view.all-ideas',
+            'view.any-ideas',
             'manage.idea-workflow',
             'manage.review-decisions',
             'comment.on-ideas',
@@ -111,16 +203,23 @@ class RolePermissionSeeder extends Seeder
             'compile.sme-comments',
             'oversee.review-process',
 
-            // idea management
+            // Ideas Management
+            // Own Ideas
+            'manage.own-ideas',
             'create.ideas',
             'edit.own-ideas',
-            'delete.own-ideas',
+            'view.own-ideas',
+            'soft-delete.own-ideas',
+            'permanent-delete.own-ideas',
+            'restore.own-ideas',
 
             // Challenge management
             'manage.challenges',
             'create.challenges',
             'edit.challenges',
-            'delete.challenges',
+            'soft-delete.challenges',
+            'permanent-delete.challenges',
+            'restore.challenges',
             'manage.challenge-workflow',
             'award.challenges',
             
@@ -134,30 +233,51 @@ class RolePermissionSeeder extends Seeder
         // 3. Board Role - Stage 2 review
         $boardRole = Role::create(['name' => 'board']);
         $boardRole->givePermissionTo([
+            // Review Stats
+            'idea-review-stats',
+
             'review.ideas-stage2',
             'comment.on-ideas',
             'review.challenge-submissions',
             'comment.on-challenges',
             'access.dashboard',
             'access.review-queue',
-            'view.own-ideas',
+
+            // Ideas Management
+            // Own Ideas
+            'manage.own-ideas',
             'create.ideas',
             'edit.own-ideas',
-            'delete.own-ideas',
+            'view.own-ideas',
+            'soft-delete.own-ideas',
+            'permanent-delete.own-ideas',
+            'restore.own-ideas',
+
             'participate.challenges',
         ]);
 
         // 4. Subject Matter Expert Role - Stage 1 review
         $smeRole = Role::create(['name' => 'subject-matter-expert']);
         $smeRole->givePermissionTo([
+            // Review Stats
+            'idea-review-stats',
+
             'review.ideas-stage1',
             'comment.on-ideas',
             'access.dashboard',
             'access.review-queue',
-            'view.own-ideas',
+
+            // Ideas Management
+            // Own Ideas
+            'manage.own-ideas',
             'create.ideas',
             'edit.own-ideas',
-            'delete.own-ideas',
+            'view.own-ideas',
+            'soft-delete.own-ideas',
+            'permanent-delete.own-ideas',
+            'restore.own-ideas',
+
+
             'participate.challenges',
             'request.collaboration',
             'submit.collaboration-proposals',
@@ -166,14 +286,24 @@ class RolePermissionSeeder extends Seeder
         // 5. Challenge Reviewer Expert Role - Challenge reviews only
         $challengeReviewerRole = Role::create(['name' => 'challenge-reviewer-expert']);
         $challengeReviewerRole->givePermissionTo([
+            // Review Stats
+            'challenge-review-stats',
+
             'review.challenge-submissions',
             'comment.on-challenges',
             'access.dashboard',
             'access.review-queue',
-            'view.own-ideas',
+
+            // Ideas Management
+            // Own Ideas
+            'manage.own-ideas',
             'create.ideas',
             'edit.own-ideas',
-            'delete.own-ideas',
+            'view.own-ideas',
+            'soft-delete.own-ideas',
+            'permanent-delete.own-ideas',
+            'restore.own-ideas',
+
             'participate.challenges',
             'request.collaboration',
             'submit.collaboration-proposals',
@@ -182,10 +312,19 @@ class RolePermissionSeeder extends Seeder
         // 6. Author Role - Default user role
         $authorRole = Role::create(['name' => 'author']);
         $authorRole->givePermissionTo([
+            // Basic Stats
+            'basic-stats',
+            
+            // Ideas Management
+            // Own Ideas
+            'manage.own-ideas',
             'create.ideas',
             'edit.own-ideas',
-            'delete.own-ideas',
             'view.own-ideas',
+            'soft-delete.own-ideas',
+            'permanent-delete.own-ideas',
+            'restore.own-ideas',
+            
             'participate.challenges',
             'request.collaboration',
             'submit.collaboration-proposals',
