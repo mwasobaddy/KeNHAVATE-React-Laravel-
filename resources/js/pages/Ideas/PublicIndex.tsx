@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import ideasRoutes from '@/routes/ideas';
+import collaborationRoutes from '@/routes/collaboration';
 import { EllipsisVertical, Eye, FileText, MessagesSquare, SquarePen, Trash2, UsersRound, Power, Heart, Home, Lightbulb, Plus, Send } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import {
@@ -11,6 +12,15 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+    PaginationEllipsis,
+} from '@/components/ui/pagination';
 import SearchBar from '@/components/SearchBar';
 import AdvancedFilters, { type FilterConfig } from '@/components/AdvancedFilters';
 import DeleteModal from '@/components/DeleteModal';
@@ -47,25 +57,74 @@ interface Idea {
         name: string;
     } | null;
     is_author?: boolean;
+    collaboration_request?: {
+        id: number;
+        status: 'pending' | 'approved' | 'rejected';
+    } | null;
+}
+
+interface PaginatedResponse<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number;
+    to: number;
+    links: Array<{
+        url: string | null;
+        label: string;
+        active: boolean;
+    }>;
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Home',
-        href: '/ideas',
+        href: '/dashboard',
         icon: Home,
     },
     {
         title: 'Collaboration Hub',
-        href: '/collaboration/hub',
+        // href: '/collaboration/hub',
+        // my path is /Users/app/Desktop/ReactNative/KeNHAVATE/resources/js/pages/Ideas/PublicIndex.tsx
+        href: collaborationRoutes.hub.url(),
         icon: Lightbulb,
     },
 ];
 
 export default function Index() {
-    const { ideas } = usePage<{ ideas: Idea[] }>().props;
-    const [query, setQuery] = useState('');
-    const [filters, setFilters] = useState<Record<string, any>>({});
+    const { ideas, thematicAreas } = usePage<{ 
+        ideas: PaginatedResponse<Idea>;
+        thematicAreas: Array<{ id: number; name: string }>;
+    }>().props;
+    
+    // Initialize search and filters from URL parameters
+    const [query, setQuery] = useState(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('search') || '';
+    });
+    
+    const [filters, setFilters] = useState<Record<string, any>>(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialFilters: Record<string, any> = {};
+        
+        // Extract filter values from URL
+        for (const [key, value] of urlParams.entries()) {
+            if (key !== 'search' && key !== 'page') {
+                if (key.endsWith('[]')) {
+                    const filterKey = key.slice(0, -2);
+                    if (!initialFilters[filterKey]) initialFilters[filterKey] = [];
+                    initialFilters[filterKey].push(value);
+                } else {
+                    initialFilters[key] = value;
+                }
+            }
+        }
+        
+        return initialFilters;
+    });
+    
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [loading, setLoading] = useState(false);
     const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
@@ -127,16 +186,10 @@ export default function Index() {
             key: 'thematicArea',
             label: 'Thematic Area',
             type: 'select',
-            options: [
-                // These would typically come from a thematic areas API or props
-                // For now, adding common ones - should be dynamic
-                { value: '1', label: 'Technology & Innovation' },
-                { value: '2', label: 'Healthcare & Medicine' },
-                { value: '3', label: 'Education & Learning' },
-                { value: '4', label: 'Environment & Sustainability' },
-                { value: '5', label: 'Business & Economics' },
-                { value: '6', label: 'Social Impact' },
-            ],
+            options: thematicAreas.map(area => ({
+                value: area.id.toString(),
+                label: area.name
+            })),
             placeholder: 'All thematic areas',
         },
         {
@@ -161,93 +214,93 @@ export default function Index() {
         router.on('finish', finish);
     }, []);
 
-    // initialize likes state from server props
+    // initialize likes state and collaboration requests from server props
     useEffect(() => {
         const lm: Record<number, boolean> = {};
         const lc: Record<number, number> = {};
         const cm: Record<number, boolean> = {};
         const com: Record<number, boolean> = {};
-        ideas.forEach((i) => {
+        const cr: Record<number, { status: string; id?: number }> = {};
+        ideas.data.forEach((i) => {
             lm[i.id] = i.liked_by_user ?? false;
             lc[i.id] = i.likes_count ?? 0;
             cm[i.id] = i.collaboration_enabled ?? false;
             com[i.id] = i.comments_enabled ?? false;
+            // Initialize collaboration requests from server data
+            if (i.collaboration_request) {
+                cr[i.id] = {
+                    status: i.collaboration_request.status,
+                    id: i.collaboration_request.id
+                };
+            }
         });
         setLikedMap(lm);
         setLikesMap(lc);
         setCollaborationMap(cm);
         setCommentsMap(com);
+        setCollaborationRequests(cr);
     }, [ideas]);
 
-    const filteredIdeas = useMemo(() => {
-        return ideas.filter((idea) => {
-            // SearchBar filter (query)
-            if (query && !`${idea.title} ${idea.description}`.toLowerCase().includes(query.toLowerCase())) return false;
+    // Handle search with debounce
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            const currentParams = new URLSearchParams(window.location.search);
+            const newParams = new URLSearchParams();
             
-            // Status filter
-            if (filters.status && idea.status !== filters.status) return false;
+            // Preserve the current page when building new params
+            const currentPage = currentParams.get('page');
             
-            // Thematic Area filter
-            if (filters.thematicArea && idea.thematic_area) {
-                if (idea.thematic_area.id.toString() !== filters.thematicArea) return false;
-            } else if (filters.thematicArea && !idea.thematic_area) {
-                return false; // Filter requires thematic area but idea doesn't have one
-            }
-            
-            // Min Revisions filter
-            if (filters.minRevisions && (idea.current_revision_number ?? 0) < filters.minRevisions) return false;
-            
-            // Max Revisions filter
-            if (filters.maxRevisions && (idea.current_revision_number ?? 0) > filters.maxRevisions) return false;
-            
-            // Collaboration Deadline filter
-            if (filters.collaborationDeadline && idea.collaboration_deadline) {
-                const ideaDate = new Date(idea.collaboration_deadline);
-                const filterDate = new Date(filters.collaborationDeadline);
-                if (ideaDate.toDateString() !== filterDate.toDateString()) return false;
-            }
-            
-            // Created After filter
-            if (filters.createdAfter) {
-                const ideaDate = new Date(idea.created_at);
-                const filterDate = new Date(filters.createdAfter);
-                if (ideaDate < filterDate) return false;
-            }
-            
-            // Created Before filter
-            if (filters.createdBefore) {
-                const ideaDate = new Date(idea.created_at);
-                const filterDate = new Date(filters.createdBefore);
-                filterDate.setHours(23, 59, 59, 999); // End of day
-                if (ideaDate > filterDate) return false;
-            }
-            
-            // Features filter (checkbox array)
-            if (filters.features && Array.isArray(filters.features) && filters.features.length > 0) {
-                for (const feature of filters.features) {
-                    switch (feature) {
-                        case 'collaboration_enabled':
-                            if (!idea.collaboration_enabled) return false;
-                            break;
-                        case 'comments_enabled':
-                            if (!idea.comments_enabled) return false;
-                            break;
-                        case 'team_effort':
-                            if (!idea.team_effort) return false;
-                            break;
-                        case 'original_idea_disclaimer':
-                            if (!idea.original_idea_disclaimer) return false;
-                            break;
-                        case 'has_attachment':
-                            if (!idea.attachment_filename) return false;
-                            break;
+            if (query) newParams.set('search', query);
+            if (Object.keys(filters).length > 0) {
+                Object.entries(filters).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined && value !== '') {
+                        if (Array.isArray(value)) {
+                            value.forEach(v => newParams.append(`${key}[]`, v));
+                        } else {
+                            newParams.set(key, value.toString());
+                        }
                     }
+                });
+            }
+            
+            // Check if search or filters changed (not page)
+            const currentSearch = currentParams.get('search') || '';
+            const newSearch = query || '';
+            
+            // Compare filter params (excluding page)
+            const currentFilters = new URLSearchParams();
+            const newFilters = new URLSearchParams();
+            
+            for (const [key, value] of currentParams.entries()) {
+                if (key !== 'page' && key !== 'search') {
+                    currentFilters.append(key, value);
                 }
             }
             
-            return true;
-        });
-    }, [ideas, query, filters]);
+            for (const [key, value] of newParams.entries()) {
+                if (key !== 'page' && key !== 'search') {
+                    newFilters.append(key, value);
+                }
+            }
+            
+            const searchChanged = currentSearch !== newSearch;
+            const filtersChanged = currentFilters.toString() !== newFilters.toString();
+            
+            // Only navigate if search or filters actually changed
+            if (searchChanged || filtersChanged) {
+                // Reset to page 1 when search/filters change
+                const finalUrl = `${collaborationRoutes.hub.url()}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+                
+                router.get(finalUrl, {}, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                });
+            }
+        }, 300); // 300ms debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [query, filters]);
 
     function promptDeleteSingle(id: number) {
         setSingleDeleteId(id);
@@ -344,13 +397,157 @@ export default function Index() {
         }
     }
 
+    function getCollaborationButtonProps(idea: Idea) {
+        const localRequest = collaborationRequests[idea.id];
+        const serverRequest = idea.collaboration_request;
+        const requestStatus = serverRequest?.status || localRequest?.status;
+        const isSending = sendingRequests.has(idea.id);
+
+        if (isSending) {
+            return {
+                text: 'Sending...',
+                className: 'bg-purple-400 text-white cursor-not-allowed',
+                disabled: true,
+                onClick: null,
+                href: null,
+            };
+        }
+
+        switch (requestStatus) {
+            case 'pending':
+                return {
+                    text: 'Pending',
+                    className: 'bg-orange-500 text-white hover:bg-orange-600 cursor-not-allowed',
+                    disabled: true,
+                    onClick: null,
+                    href: null,
+                };
+            case 'approved':
+                return {
+                    text: 'Propose Changes',
+                    className: 'bg-green-600 text-white hover:bg-green-700',
+                    disabled: false,
+                    onClick: null,
+                    href: `/collaboration/${idea.slug}/propose`,
+                };
+            case 'rejected':
+                return {
+                    text: 'Rejected',
+                    className: 'bg-red-500 text-white hover:bg-red-600 cursor-not-allowed',
+                    disabled: true,
+                    onClick: null,
+                    href: null,
+                };
+            default:
+                return {
+                    text: 'Collaborate',
+                    className: 'bg-purple-600 text-white hover:bg-purple-700',
+                    disabled: false,
+                    onClick: () => handleSendCollaborationRequest(idea),
+                    href: null,
+                };
+        }
+    }
+
+    // Helper function to generate pagination URLs with current search and filter parameters
+    function getPaginationUrl(page: number) {
+        const params = new URLSearchParams();
+        
+        if (query) params.set('search', query);
+        if (Object.keys(filters).length > 0) {
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== null && value !== undefined && value !== '') {
+                    if (Array.isArray(value)) {
+                        value.forEach(v => params.append(`${key}[]`, v));
+                    } else {
+                        params.set(key, value.toString());
+                    }
+                }
+            });
+        }
+        
+        params.set('page', page.toString());
+        
+        return `${collaborationRoutes.hub.url()}?${params.toString()}`;
+    }
+
+    // Generate pagination links with ellipsis logic
+    function generatePaginationLinks() {
+        const currentPage = ideas.current_page;
+        const lastPage = ideas.last_page;
+        const links = [];
+
+        if (lastPage <= 7) {
+            // Show all pages if 7 or fewer
+            for (let i = 1; i <= lastPage; i++) {
+                links.push({
+                    page: i,
+                    url: getPaginationUrl(i),
+                    isActive: i === currentPage,
+                    isEllipsis: false,
+                });
+            }
+        } else {
+            // Always show first page
+            links.push({
+                page: 1,
+                url: getPaginationUrl(1),
+                isActive: 1 === currentPage,
+                isEllipsis: false,
+            });
+
+            // Add ellipsis after first page if needed
+            if (currentPage > 4) {
+                links.push({
+                    page: null,
+                    url: null,
+                    isActive: false,
+                    isEllipsis: true,
+                });
+            }
+
+            // Show pages around current page
+            const start = Math.max(2, currentPage - 1);
+            const end = Math.min(lastPage - 1, currentPage + 1);
+
+            for (let i = start; i <= end; i++) {
+                links.push({
+                    page: i,
+                    url: getPaginationUrl(i),
+                    isActive: i === currentPage,
+                    isEllipsis: false,
+                });
+            }
+
+            // Add ellipsis before last page if needed
+            if (currentPage < lastPage - 3) {
+                links.push({
+                    page: null,
+                    url: null,
+                    isActive: false,
+                    isEllipsis: true,
+                });
+            }
+
+            // Always show last page
+            links.push({
+                page: lastPage,
+                url: getPaginationUrl(lastPage),
+                isActive: lastPage === currentPage,
+                isEllipsis: false,
+            });
+        }
+
+        return links;
+    }
+
     // dropdown is handled by the shared DropdownMenu component
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Collaboration Hub" />
             {/* 60% Background - Light: white, Dark: gray-900 */}
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-2">
                     <div className="relative mb-2">
@@ -366,7 +563,15 @@ export default function Index() {
 
                 {/* Search Bar */}
                 <div className="w-full">
-                    <SearchBar value={query} onChange={setQuery} placeholder="Search collaboration opportunities..." />
+                    <SearchBar 
+                        value={query} 
+                        onChange={setQuery} 
+                        placeholder="Search collaboration opportunities..."
+                        showFilterToggle={true}
+                        filterVisible={filtersVisible}
+                        onFilterToggle={() => setFiltersVisible(!filtersVisible)}
+                        activeFilterCount={Object.keys(filters).length}
+                    />
                 </div>
 
                 {/* Advanced Filters */}
@@ -375,8 +580,6 @@ export default function Index() {
                         filters={filterConfig} 
                         onFilterChange={setFilters}
                         visible={filtersVisible}
-                        onToggle={() => setFiltersVisible(!filtersVisible)}
-                        showToggleButton={true}
                     />
                 </div>
 
@@ -409,27 +612,21 @@ export default function Index() {
                             </div>
                         ))}
                     </div>
-                ) : ideas.length === 0 ? (
+                ) : ideas.data.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full py-16">
                         <PlaceholderPattern className="w-32 h-32 opacity-20" />
                         <h3 className="text-xl font-bold mt-6 text-[#231F20] dark:text-white">No ideas yet</h3>
                         <p className="text-sm text-[#9B9EA4] mt-2">Start by creating your first idea.</p>
                     </div>
-                ) : filteredIdeas.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full py-16">
-                        <PlaceholderPattern className="w-32 h-32 opacity-20" />
-                        <h3 className="text-xl font-bold mt-6 text-[#231F20] dark:text-white">No ideas match your filters</h3>
-                        <p className="text-sm text-[#9B9EA4] mt-2">Try adjusting your search or filter criteria.</p>
-                    </div>
                 ) : (
                     <div className="flex flex-col gap-6">
-                        {filteredIdeas.map((idea) => {
+                        {ideas.data.map((idea) => {
                             return (
                                 <div
                                     key={idea.id}
                                     className="w-full rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F8EBD5]/30 dark:bg-[#F8EBD5]/10 backdrop-blur-lg p-6 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
                                 >
-                                    <div className="flex items-start justify-between mb-4">
+                                    <div className="flex items-start justify-end mb-4">
                                         <button
                                             onClick={() => toggleLike(idea.id)}
                                             className={`flex gap-2 items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${likedMap[idea.id]
@@ -456,6 +653,14 @@ export default function Index() {
                                             <div>
                                                 <h3 className="text-xl font-bold text-[#231F20] dark:text-white">{idea.title}</h3>
                                                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-3">{idea.description}</p>
+                                                <div className="flex mt-2 gap-2 text-sm text-[#9B9EA4]">
+                                                    <span>
+                                                        Author :
+                                                    </span>
+                                                    <span className="text-[#231F20] dark:text-white font-medium">
+                                                        {idea.user?.name ?? 'Unknown'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -569,14 +774,32 @@ export default function Index() {
                                                     <MessagesSquare className="h-4 w-4" />
                                                     Comments
                                                 </Link>
-                                                <button
-                                                    onClick={() => handleSendCollaborationRequest(idea)}
-                                                    disabled={sendingRequests.has(idea.id) || collaborationRequests[idea.id]?.status === 'pending'}
-                                                    className="items-center gap-2 p-4 sm:px-4 sm:py-2 bg-purple-600 text-white hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed rounded-lg text-sm font-medium shadow-md hover:shadow-lg hidden lg:flex transition-all duration-300"
-                                                >
-                                                    <Send className="h-4 w-4" />
-                                                    {sendingRequests.has(idea.id) ? 'Sending...' : collaborationRequests[idea.id]?.status === 'pending' ? 'Request Sent' : 'Collaborate'}
-                                                </button>
+                                                {(() => {
+                                                    const buttonProps = getCollaborationButtonProps(idea);
+                                                    
+                                                    if (buttonProps.href) {
+                                                        return (
+                                                            <Link
+                                                                href={buttonProps.href}
+                                                                className={`items-center gap-2 p-4 sm:px-4 sm:py-2 rounded-lg text-sm font-medium shadow-md hover:shadow-lg hidden lg:flex transition-all duration-300 ${buttonProps.className}`}
+                                                            >
+                                                                <Send className="h-4 w-4" />
+                                                                {buttonProps.text}
+                                                            </Link>
+                                                        );
+                                                    } else {
+                                                        return (
+                                                            <button
+                                                                onClick={buttonProps.onClick || undefined}
+                                                                disabled={buttonProps.disabled}
+                                                                className={`items-center gap-2 p-4 sm:px-4 sm:py-2 rounded-lg text-sm font-medium shadow-md hover:shadow-lg hidden lg:flex transition-all duration-300 ${buttonProps.className}`}
+                                                            >
+                                                                <Send className="h-4 w-4" />
+                                                                {buttonProps.text}
+                                                            </button>
+                                                        );
+                                                    }
+                                                })()}
                                                 <a
                                                     href={`/ideas/${idea.slug}/attachment`}
                                                     target="_blank"
@@ -606,14 +829,46 @@ export default function Index() {
                                                                 </Link>
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem asChild>
-                                                                <button
-                                                                    onClick={() => handleSendCollaborationRequest(idea)}
-                                                                    disabled={sendingRequests.has(idea.id) || collaborationRequests[idea.id]?.status === 'pending'}
-                                                                    className="w-full text-left flex items-center px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                >
-                                                                    <Send className="h-4 w-4 text-white dark:text-black" />
-                                                                    {sendingRequests.has(idea.id) ? 'Sending...' : collaborationRequests[idea.id]?.status === 'pending' ? 'Request Sent' : 'Collaborate'}
-                                                                </button>
+                                                                {(() => {
+                                                                    const buttonProps = getCollaborationButtonProps(idea);
+                                                                    
+                                                                    const getTextColor = () => {
+                                                                        const status = idea.collaboration_request?.status || collaborationRequests[idea.id]?.status;
+                                                                        switch (status) {
+                                                                            case 'pending':
+                                                                                return 'text-orange-500 dark:text-orange-400';
+                                                                            case 'approved':
+                                                                                return 'text-green-600 dark:text-green-400';
+                                                                            case 'rejected':
+                                                                                return 'text-red-500 dark:text-red-400';
+                                                                            default:
+                                                                                return 'text-white dark:text-black';
+                                                                        }
+                                                                    };
+                                                                    
+                                                                    if (buttonProps.href) {
+                                                                        return (
+                                                                            <Link
+                                                                                href={buttonProps.href}
+                                                                                className={`w-full text-left flex items-center px-4 py-2`}
+                                                                            >
+                                                                                <Send className={`h-4 w-4 mr-2 ${getTextColor()}`} />
+                                                                                <span className={getTextColor()}>{buttonProps.text}</span>
+                                                                            </Link>
+                                                                        );
+                                                                    } else {
+                                                                        return (
+                                                                            <button
+                                                                                onClick={buttonProps.onClick || undefined}
+                                                                                disabled={buttonProps.disabled}
+                                                                                className={`w-full text-left flex items-center px-4 py-2 ${buttonProps.disabled ? 'disabled:cursor-not-allowed opacity-50' : ''}`}
+                                                                            >
+                                                                                <Send className={`h-4 w-4 mr-2 ${getTextColor()}`} />
+                                                                                <span className={getTextColor()}>{buttonProps.text}</span>
+                                                                            </button>
+                                                                        );
+                                                                    }
+                                                                })()}
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem asChild>
                                                                 <a
@@ -633,6 +888,49 @@ export default function Index() {
                                 </div>
                             );
                         })}
+                    </div>
+                )}
+
+                {/* Pagination */}
+                {ideas.last_page > 1 && (
+                    <div className="mt-8 flex justify-center">
+                        <Pagination>
+                            <PaginationContent>
+                                {ideas.current_page > 1 && (
+                                    <PaginationItem>
+                                        <PaginationPrevious href={getPaginationUrl(ideas.current_page - 1)} />
+                                    </PaginationItem>
+                                )}
+
+                                {generatePaginationLinks().map((link, index) => (
+                                    <PaginationItem key={index}>
+                                        {link.isEllipsis ? (
+                                            <PaginationEllipsis />
+                                        ) : (
+                                            <PaginationLink
+                                                href={link.url!}
+                                                isActive={link.isActive}
+                                            >
+                                                {link.page}
+                                            </PaginationLink>
+                                        )}
+                                    </PaginationItem>
+                                ))}
+
+                                {ideas.current_page < ideas.last_page && (
+                                    <PaginationItem>
+                                        <PaginationNext href={getPaginationUrl(ideas.current_page + 1)} />
+                                    </PaginationItem>
+                                )}
+                            </PaginationContent>
+                        </Pagination>
+                    </div>
+                )}
+
+                {/* Pagination Info */}
+                {ideas.total > 0 && (
+                    <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+                        Showing {ideas.from} to {ideas.to} of {ideas.total} results
                     </div>
                 )}
             </div>
