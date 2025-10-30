@@ -110,7 +110,12 @@ class RolePermissionSeeder extends Seeder
             'reject.ideas',
             'compile.sme-comments',
             'oversee.review-process',
-            
+
+            // idea management
+            'create.ideas',
+            'edit.own-ideas',
+            'delete.own-ideas',
+
             // Challenge management
             'manage.challenges',
             'create.challenges',
