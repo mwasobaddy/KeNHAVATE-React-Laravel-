@@ -10,7 +10,7 @@ use App\Http\Controllers\CollaborationProposalController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ChallengeController;
 use App\Http\Controllers\ChallengeSubmissionController;
-use App\Http\Controllers\ChallengeReviewController;
+use App\Http\Controllers\Dashboard\DashboardController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -19,9 +19,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Idea routes - Basic access for all authenticated users
     Route::get('ideas/submissions', [IdeaController::class, 'index'])->name('ideas.index');
