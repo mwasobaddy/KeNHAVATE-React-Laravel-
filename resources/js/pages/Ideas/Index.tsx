@@ -11,6 +11,15 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+    PaginationEllipsis,
+} from '@/components/ui/pagination';
 import SearchBar from '@/components/SearchBar';
 import AdvancedFilters, { type FilterConfig } from '@/components/AdvancedFilters';
 import SelectionToolbar from '@/components/SelectionToolbar';
@@ -49,10 +58,25 @@ interface Idea {
     } | null;
 }
 
+interface PaginatedResponse<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number;
+    to: number;
+    links: Array<{
+        url: string | null;
+        label: string;
+        active: boolean;
+    }>;
+}
+
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Home',
-        href: '/ideas',
+        href: '/dashboard',
         icon: Home,
     },
     {
@@ -63,9 +87,37 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Index() {
-    const { ideas } = usePage<{ ideas: Idea[] }>().props;
-    const [query, setQuery] = useState('');
-    const [filters, setFilters] = useState<Record<string, any>>({});
+    const { ideas, thematicAreas } = usePage<{ 
+        ideas: PaginatedResponse<Idea>;
+        thematicAreas: Array<{ id: number; name: string }>;
+    }>().props;
+    
+    // Initialize search and filters from URL parameters
+    const [query, setQuery] = useState(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('search') || '';
+    });
+    
+    const [filters, setFilters] = useState<Record<string, any>>(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialFilters: Record<string, any> = {};
+        
+        // Extract filter values from URL
+        for (const [key, value] of urlParams.entries()) {
+            if (key !== 'search' && key !== 'page') {
+                if (key.endsWith('[]')) {
+                    const filterKey = key.slice(0, -2);
+                    if (!initialFilters[filterKey]) initialFilters[filterKey] = [];
+                    initialFilters[filterKey].push(value);
+                } else {
+                    initialFilters[key] = value;
+                }
+            }
+        }
+        
+        return initialFilters;
+    });
+    
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [selected, setSelected] = useState<Record<number, boolean>>({});
     const [loading, setLoading] = useState(false);
@@ -127,16 +179,10 @@ export default function Index() {
             key: 'thematicArea',
             label: 'Thematic Area',
             type: 'select',
-            options: [
-                // These would typically come from a thematic areas API or props
-                // For now, adding common ones - should be dynamic
-                { value: '1', label: 'Technology & Innovation' },
-                { value: '2', label: 'Healthcare & Medicine' },
-                { value: '3', label: 'Education & Learning' },
-                { value: '4', label: 'Environment & Sustainability' },
-                { value: '5', label: 'Business & Economics' },
-                { value: '6', label: 'Social Impact' },
-            ],
+            options: thematicAreas.map(area => ({
+                value: area.id.toString(),
+                label: area.name
+            })),
             placeholder: 'All thematic areas',
         },
         {
@@ -167,7 +213,7 @@ export default function Index() {
         const lc: Record<number, number> = {};
         const cm: Record<number, boolean> = {};
         const com: Record<number, boolean> = {};
-        ideas.forEach((i) => {
+        ideas.data.forEach((i) => {
             lm[i.id] = i.liked_by_user ?? false;
             lc[i.id] = i.likes_count ?? 0;
             cm[i.id] = i.collaboration_enabled ?? false;
@@ -179,79 +225,69 @@ export default function Index() {
         setCommentsMap(com);
     }, [ideas]);
 
-    const filteredIdeas = useMemo(() => {
-        return ideas.filter((idea) => {
-            // SearchBar filter (query)
-            if (query && !`${idea.title} ${idea.description}`.toLowerCase().includes(query.toLowerCase())) return false;
+    // Handle search with debounce
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            const currentParams = new URLSearchParams(window.location.search);
+            const newParams = new URLSearchParams();
             
-            // Status filter
-            if (filters.status && idea.status !== filters.status) return false;
-            
-            // Thematic Area filter
-            if (filters.thematicArea && idea.thematic_area) {
-                if (idea.thematic_area.id.toString() !== filters.thematicArea) return false;
-            } else if (filters.thematicArea && !idea.thematic_area) {
-                return false; // Filter requires thematic area but idea doesn't have one
-            }
-            
-            // Min Revisions filter
-            if (filters.minRevisions && (idea.current_revision_number ?? 0) < filters.minRevisions) return false;
-            
-            // Max Revisions filter
-            if (filters.maxRevisions && (idea.current_revision_number ?? 0) > filters.maxRevisions) return false;
-            
-            // Collaboration Deadline filter
-            if (filters.collaborationDeadline && idea.collaboration_deadline) {
-                const ideaDate = new Date(idea.collaboration_deadline);
-                const filterDate = new Date(filters.collaborationDeadline);
-                if (ideaDate.toDateString() !== filterDate.toDateString()) return false;
-            }
-            
-            // Created After filter
-            if (filters.createdAfter) {
-                const ideaDate = new Date(idea.created_at);
-                const filterDate = new Date(filters.createdAfter);
-                if (ideaDate < filterDate) return false;
-            }
-            
-            // Created Before filter
-            if (filters.createdBefore) {
-                const ideaDate = new Date(idea.created_at);
-                const filterDate = new Date(filters.createdBefore);
-                filterDate.setHours(23, 59, 59, 999); // End of day
-                if (ideaDate > filterDate) return false;
-            }
-            
-            // Features filter (checkbox array)
-            if (filters.features && Array.isArray(filters.features) && filters.features.length > 0) {
-                for (const feature of filters.features) {
-                    switch (feature) {
-                        case 'collaboration_enabled':
-                            if (!idea.collaboration_enabled) return false;
-                            break;
-                        case 'comments_enabled':
-                            if (!idea.comments_enabled) return false;
-                            break;
-                        case 'team_effort':
-                            if (!idea.team_effort) return false;
-                            break;
-                        case 'original_idea_disclaimer':
-                            if (!idea.original_idea_disclaimer) return false;
-                            break;
-                        case 'has_attachment':
-                            if (!idea.attachment_filename) return false;
-                            break;
+            if (query) newParams.set('search', query);
+            if (Object.keys(filters).length > 0) {
+                Object.entries(filters).forEach(([key, value]) => {
+                    if (value !== null && value !== undefined && value !== '') {
+                        if (Array.isArray(value)) {
+                            value.forEach(v => newParams.append(`${key}[]`, v));
+                        } else {
+                            newParams.set(key, value.toString());
+                        }
                     }
+                });
+            }
+            
+            // Check if search or filters changed (not page)
+            const currentSearch = currentParams.get('search') || '';
+            const newSearch = query || '';
+            
+            // Compare filter params (excluding page)
+            const currentFilters = new URLSearchParams();
+            const newFilters = new URLSearchParams();
+            
+            for (const [key, value] of currentParams.entries()) {
+                if (key !== 'page' && key !== 'search') {
+                    currentFilters.append(key, value);
                 }
             }
             
-            return true;
-        });
-    }, [ideas, query, filters]);
+            for (const [key, value] of newParams.entries()) {
+                if (key !== 'page' && key !== 'search') {
+                    newFilters.append(key, value);
+                }
+            }
+            
+            const searchChanged = currentSearch !== newSearch;
+            const filtersChanged = currentFilters.toString() !== newFilters.toString();
+            
+            // Only navigate if search or filters actually changed
+            if (searchChanged || filtersChanged) {
+                // Reset to page 1 when search/filters change
+                const finalUrl = `${ideasRoutes.index.url()}${newParams.toString() ? '?' + newParams.toString() : ''}`;
+                
+                router.get(finalUrl, {}, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                });
+            }
+        }, 300); // 300ms debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [query, filters]);
+
+    // Server-side filtering is now handled, no need for client-side filtering
 
     function onSelectAll(checked: boolean) {
         const map: Record<number, boolean> = {};
-        filteredIdeas.forEach((i) => (map[i.id] = checked));
+        ideas.data.forEach((i) => (map[i.id] = checked));
         setSelected(map);
     }
 
@@ -265,7 +301,7 @@ export default function Index() {
 
     function exportSelected(format: 'csv' | 'pdf' | 'docx') {
         const ids = getSelectedIds();
-        const rows = ideas.filter((i) => ids.includes(i.id)).map((i) => ({ id: i.id, title: i.title, description: i.description, status: i.status }));
+        const rows = ideas.data.filter((i) => ids.includes(i.id)).map((i) => ({ id: i.id, title: i.title, description: i.description, status: i.status }));
         if (format === 'csv') {
             const header = 'id,title,description,status\n';
             const body = rows.map((r) => `${r.id},"${(r.title || '').replace(/"/g, '""')}","${(r.description || '').replace(/"/g, '""')}",${r.status || ''}`).join('\n');
@@ -413,13 +449,105 @@ export default function Index() {
             });
     }
 
+    // Helper function to generate pagination URLs with current search and filter parameters
+    function getPaginationUrl(page: number) {
+        const params = new URLSearchParams();
+        
+        if (query) params.set('search', query);
+        if (Object.keys(filters).length > 0) {
+            Object.entries(filters).forEach(([key, value]) => {
+                if (value !== null && value !== undefined && value !== '') {
+                    if (Array.isArray(value)) {
+                        value.forEach(v => params.append(`${key}[]`, v));
+                    } else {
+                        params.set(key, value.toString());
+                    }
+                }
+            });
+        }
+        
+        params.set('page', page.toString());
+        
+        return `${ideasRoutes.index.url()}?${params.toString()}`;
+    }
+
+    // Generate pagination links with ellipsis logic
+    function generatePaginationLinks() {
+        const currentPage = ideas.current_page;
+        const lastPage = ideas.last_page;
+        const links = [];
+
+        if (lastPage <= 7) {
+            // Show all pages if 7 or fewer
+            for (let i = 1; i <= lastPage; i++) {
+                links.push({
+                    page: i,
+                    url: getPaginationUrl(i),
+                    isActive: i === currentPage,
+                    isEllipsis: false,
+                });
+            }
+        } else {
+            // Always show first page
+            links.push({
+                page: 1,
+                url: getPaginationUrl(1),
+                isActive: 1 === currentPage,
+                isEllipsis: false,
+            });
+
+            // Add ellipsis after first page if needed
+            if (currentPage > 4) {
+                links.push({
+                    page: null,
+                    url: null,
+                    isActive: false,
+                    isEllipsis: true,
+                });
+            }
+
+            // Show pages around current page
+            const start = Math.max(2, currentPage - 1);
+            const end = Math.min(lastPage - 1, currentPage + 1);
+
+            for (let i = start; i <= end; i++) {
+                links.push({
+                    page: i,
+                    url: getPaginationUrl(i),
+                    isActive: i === currentPage,
+                    isEllipsis: false,
+                });
+            }
+
+            // Add ellipsis before last page if needed
+            if (currentPage < lastPage - 3) {
+                links.push({
+                    page: null,
+                    url: null,
+                    isActive: false,
+                    isEllipsis: true,
+                });
+            }
+
+            // Always show last page
+            links.push({
+                page: lastPage,
+                url: getPaginationUrl(lastPage),
+                isActive: lastPage === currentPage,
+                isEllipsis: false,
+            });
+        }
+
+        return links;
+    }
+
     // dropdown is handled by the shared DropdownMenu component
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Manage Ideas" />
             {/* 60% Background - Light: white, Dark: gray-900 */}
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
                 {/* Header with add idea button at the end */}
                 <div className="flex items-center justify-between mb-2">
                     <div className="relative mb-2">
@@ -442,21 +570,25 @@ export default function Index() {
 
                 {/* Search Bar */}
                 <div className="w-full">
-                    <SearchBar value={query} onChange={setQuery} placeholder="Search ideas..." />
-                </div>
+                    <SearchBar 
+                        value={query} 
+                        onChange={setQuery} 
+                        placeholder="Search ideas..."
+                        showFilterToggle={true}
+                        filterVisible={filtersVisible}
+                        onFilterToggle={() => setFiltersVisible(!filtersVisible)}
+                        activeFilterCount={Object.keys(filters).length}
+                    />
 
-                {/* Advanced Filters */}
-                <div className="w-full">
+                    {/* Advanced Filters */}
                     <AdvancedFilters 
                         filters={filterConfig} 
                         onFilterChange={setFilters}
                         visible={filtersVisible}
-                        onToggle={() => setFiltersVisible(!filtersVisible)}
-                        showToggleButton={true}
                     />
                 </div>
 
-                <SelectionToolbar total={filteredIdeas.length} selectedCount={getSelectedIds().length} onSelectAll={onSelectAll} onExport={exportSelected} onDeleteSelected={deleteSelected} />
+                <SelectionToolbar total={ideas.data.length} selectedCount={getSelectedIds().length} onSelectAll={onSelectAll} onExport={exportSelected} onDeleteSelected={deleteSelected} />
                 {loading ? (
                     <div className="flex flex-col gap-6">
                         {Array.from({ length: 4 }).map((_, i) => (
@@ -486,21 +618,15 @@ export default function Index() {
                             </div>
                         ))}
                     </div>
-                ) : ideas.length === 0 ? (
+                ) : ideas.data.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full py-16">
                         <PlaceholderPattern className="w-32 h-32 opacity-20" />
                         <h3 className="text-xl font-bold mt-6 text-[#231F20] dark:text-white">No ideas yet</h3>
                         <p className="text-sm text-[#9B9EA4] mt-2">Start by creating your first idea.</p>
                     </div>
-                ) : filteredIdeas.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full py-16">
-                        <PlaceholderPattern className="w-32 h-32 opacity-20" />
-                        <h3 className="text-xl font-bold mt-6 text-[#231F20] dark:text-white">No ideas match your filters</h3>
-                        <p className="text-sm text-[#9B9EA4] mt-2">Try adjusting your search or filter criteria.</p>
-                    </div>
                 ) : (
                     <div className="flex flex-col gap-6">
-                        {filteredIdeas.map((idea) => {
+                        {ideas.data.map((idea) => {
                             return (
                                 <div
                                     key={idea.id}
@@ -708,6 +834,49 @@ export default function Index() {
                                 </div>
                             );
                         })}
+                    </div>
+                )}
+
+                {/* Pagination */}
+                {ideas.last_page > 1 && (
+                    <div className="mt-8 flex justify-center">
+                        <Pagination>
+                            <PaginationContent>
+                                {ideas.current_page > 1 && (
+                                    <PaginationItem>
+                                        <PaginationPrevious href={getPaginationUrl(ideas.current_page - 1)} />
+                                    </PaginationItem>
+                                )}
+
+                                {generatePaginationLinks().map((link, index) => (
+                                    <PaginationItem key={index}>
+                                        {link.isEllipsis ? (
+                                            <PaginationEllipsis />
+                                        ) : (
+                                            <PaginationLink
+                                                href={link.url!}
+                                                isActive={link.isActive}
+                                            >
+                                                {link.page}
+                                            </PaginationLink>
+                                        )}
+                                    </PaginationItem>
+                                ))}
+
+                                {ideas.current_page < ideas.last_page && (
+                                    <PaginationItem>
+                                        <PaginationNext href={getPaginationUrl(ideas.current_page + 1)} />
+                                    </PaginationItem>
+                                )}
+                            </PaginationContent>
+                        </Pagination>
+                    </div>
+                )}
+
+                {/* Pagination Info */}
+                {ideas.total > 0 && (
+                    <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+                        Showing {ideas.from} to {ideas.to} of {ideas.total} results
                     </div>
                 )}
             </div>
