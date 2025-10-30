@@ -6,17 +6,19 @@ interface Props {
     total: number;
     selectedCount: number;
     currentPageCount: number;
+    totalSelectedCount?: number;
+    allSelected?: boolean;
     onSelectAll: (checked: boolean) => void;
     onExport: (format: 'csv' | 'pdf' | 'docx') => void;
     onDeleteSelected: () => void;
     onSelectAllInDatabase?: () => void;
 }
 
-export default function SelectionToolbar({ total, selectedCount, currentPageCount, onSelectAll, onExport, onDeleteSelected, onSelectAllInDatabase }: Props) {
+export default function SelectionToolbar({ total, selectedCount, currentPageCount, totalSelectedCount, allSelected, onSelectAll, onExport, onDeleteSelected, onSelectAllInDatabase }: Props) {
     const [allChecked, setAllChecked] = useState(false);
 
     useEffect(() => {
-        // if everything on current page selected set allChecked true, if none selected false, otherwise indeterminate visually via CSS (or keep false)
+        // Check if all items on current page are selected
         setAllChecked(selectedCount > 0 && selectedCount === currentPageCount);
     }, [selectedCount, currentPageCount]);
 
@@ -34,7 +36,7 @@ export default function SelectionToolbar({ total, selectedCount, currentPageCoun
                     <span className="text-sm text-[#231F20] dark:text-[#F8EBD5]">Select all</span>
                 </label>
 
-                {allChecked && onSelectAllInDatabase && (
+                {selectedCount > 0 && onSelectAllInDatabase && (
                     <button
                         onClick={onSelectAllInDatabase}
                         className="text-sm text-blue-600 hover:text-blue-800 underline hover:no-underline transition-colors"
@@ -43,7 +45,16 @@ export default function SelectionToolbar({ total, selectedCount, currentPageCoun
                     </button>
                 )}
 
-                <span className="text-sm text-[#9B9EA4]">{selectedCount} selected</span>
+                <span className="text-sm text-[#9B9EA4]">
+                    {allSelected ? (
+                        `All ${totalSelectedCount || total} items selected`
+                    ) : (
+                        `${selectedCount} of ${currentPageCount} selected on this page`
+                    )}
+                    {totalSelectedCount && totalSelectedCount > selectedCount && !allSelected && (
+                        <span className="ml-2 text-blue-600">({totalSelectedCount} total selected)</span>
+                    )}
+                </span>
             </div>
 
             <div className="flex items-center space-x-2">

@@ -119,14 +119,26 @@ export default function Index() {
     });
     
     const [filtersVisible, setFiltersVisible] = useState(false);
-    const [selected, setSelected] = useState<Record<number, boolean>>(() => {
-        // Load selected items from sessionStorage to persist across page changes
+    // Efficient selection state for large datasets
+    const [selectionState, setSelectionState] = useState<{
+        selectAll: boolean;
+        exceptions: Record<number, boolean>; // items that are opposite of selectAll state
+        manualSelections: Record<number, boolean>; // individual selections when selectAll is false
+    }>(() => {
+        // Load selection state from sessionStorage to persist across page changes
         try {
-            const stored = sessionStorage.getItem('selectedIdeas');
-            return stored ? JSON.parse(stored) : {};
-        } catch {
-            return {};
+            const stored = sessionStorage.getItem('ideasSelectionState');
+            if (stored) {
+                return JSON.parse(stored);
+            }
+        } catch (error) {
+            console.warn('Failed to parse selection state from sessionStorage:', error);
         }
+        return {
+            selectAll: false,
+            exceptions: {},
+            manualSelections: {}
+        };
     });
     const [loading, setLoading] = useState(false);
     const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
@@ -137,15 +149,15 @@ export default function Index() {
     const [singleDeleteId, setSingleDeleteId] = useState<number | null>(null);
     const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
-    // Save selected items to sessionStorage whenever selection changes
+    // Save selection state to sessionStorage whenever it changes
     useEffect(() => {
-        sessionStorage.setItem('selectedIdeas', JSON.stringify(selected));
-    }, [selected]);
+        sessionStorage.setItem('ideasSelectionState', JSON.stringify(selectionState));
+    }, [selectionState]);
 
-    // Clear selected items from sessionStorage when component unmounts
+    // Clear selection state from sessionStorage when component unmounts
     useEffect(() => {
         return () => {
-            sessionStorage.removeItem('selectedIdeas');
+            sessionStorage.removeItem('ideasSelectionState');
         };
     }, []);
 
@@ -303,62 +315,144 @@ export default function Index() {
         return () => clearTimeout(timeoutId);
     }, [query, filters]);
 
+    // Helper functions for efficient selection state management
+    function isItemSelected(id: number): boolean {
+        if (selectionState.selectAll) {
+            return !selectionState.exceptions[id];
+        } else {
+            return !!selectionState.manualSelections[id];
+        }
+    }
+
+    function getSelectedIds(): number[] {
+        if (selectionState.selectAll) {
+            // When selectAll is true, we need to get all IDs from current filters and remove exceptions
+            // For now, we'll return the IDs we can see on current page minus exceptions
+            // The backend will handle getting all IDs when needed
+            return ideas.data.filter(idea => !selectionState.exceptions[idea.id]).map(idea => idea.id);
+        } else {
+            return Object.entries(selectionState.manualSelections)
+                .filter(([, selected]) => selected)
+                .map(([id]) => Number(id));
+        }
+    }
+
+    function getTotalSelectedCount(): number {
+        if (selectionState.selectAll) {
+            // When selectAll is true, total selected = total items - exceptions
+            return ideas.total - Object.keys(selectionState.exceptions).length;
+        } else {
+            // When selectAll is false, count manual selections
+            return Object.values(selectionState.manualSelections).filter(Boolean).length;
+        }
+    }
+
+    function getSelectedCountOnCurrentPage(): number {
+        return ideas.data.filter(idea => isItemSelected(idea.id)).length;
+    }
+
     // Server-side filtering is now handled, no need for client-side filtering
 
     function onSelectAll(checked: boolean) {
-        const map: Record<number, boolean> = {};
-        ideas.data.forEach((i) => (map[i.id] = checked));
-        setSelected(map);
+        if (checked) {
+            // Select all items on current page
+            setSelectionState(prev => {
+                if (prev.selectAll) {
+                    // If selectAll is already true, remove current page items from exceptions
+                    const newExceptions = { ...prev.exceptions };
+                    ideas.data.forEach(idea => {
+                        delete newExceptions[idea.id];
+                    });
+                    return {
+                        ...prev,
+                        exceptions: newExceptions
+                    };
+                } else {
+                    // Add current page items to manual selections
+                    const newManualSelections = { ...prev.manualSelections };
+                    ideas.data.forEach(idea => {
+                        newManualSelections[idea.id] = true;
+                    });
+                    return {
+                        ...prev,
+                        manualSelections: newManualSelections
+                    };
+                }
+            });
+        } else {
+            // Deselect all items on current page
+            setSelectionState(prev => {
+                if (prev.selectAll) {
+                    // If selectAll is true, add current page items to exceptions
+                    const newExceptions = { ...prev.exceptions };
+                    ideas.data.forEach(idea => {
+                        newExceptions[idea.id] = true;
+                    });
+                    return {
+                        ...prev,
+                        exceptions: newExceptions
+                    };
+                } else {
+                    // Remove current page items from manual selections
+                    const newManualSelections = { ...prev.manualSelections };
+                    ideas.data.forEach(idea => {
+                        delete newManualSelections[idea.id];
+                    });
+                    return {
+                        ...prev,
+                        manualSelections: newManualSelections
+                    };
+                }
+            });
+        }
     }
 
     async function onSelectAllInDatabase() {
         try {
-            // Make a request to get all idea IDs for the current user with current filters
-            const params = new URLSearchParams();
-            
-            if (query) params.set('search', query);
-            if (Object.keys(filters).length > 0) {
-                Object.entries(filters).forEach(([key, value]) => {
-                    if (value !== null && value !== undefined && value !== '') {
-                        if (Array.isArray(value)) {
-                            value.forEach(v => params.append(`${key}[]`, v));
-                        } else {
-                            params.set(key, value.toString());
-                        }
-                    }
-                });
-            }
-            
-            // Request all IDs instead of paginated data
-            params.set('get_all_ids', 'true');
-            
-            const response = await fetch(`${ideasRoutes.index.url()}?${params.toString()}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                },
+            // Set selectAll to true and clear exceptions
+            setSelectionState({
+                selectAll: true,
+                exceptions: {},
+                manualSelections: {}
             });
             
-            if (response.ok) {
-                const data = await response.json();
-                const allIds = data.ids;
-                const map: Record<number, boolean> = {};
-                allIds.forEach((id: number) => (map[id] = true));
-                setSelected(map);
-            } else {
-                console.error('Failed to fetch all IDs:', response.status, response.statusText);
-            }
+            toast.success(`All ${ideas.total} items selected!`);
         } catch (error) {
             console.error('Failed to select all items:', error);
+            toast.error('Failed to select all items. Please try again.');
         }
     }
 
     function onSelectOne(id: number, checked: boolean) {
-        setSelected((s) => ({ ...s, [id]: checked }));
-    }
-
-    function getSelectedIds() {
-        return Object.entries(selected).filter(([, v]) => v).map(([k]) => Number(k));
+        setSelectionState(prev => {
+            if (prev.selectAll) {
+                // If selectAll is true, manage exceptions
+                const newExceptions = { ...prev.exceptions };
+                if (checked) {
+                    // Item should be selected, remove from exceptions
+                    delete newExceptions[id];
+                } else {
+                    // Item should be deselected, add to exceptions
+                    newExceptions[id] = true;
+                }
+                return {
+                    ...prev,
+                    exceptions: newExceptions
+                };
+            } else {
+                // If selectAll is false, manage manual selections
+                const newManualSelections = { ...prev.manualSelections };
+                if (checked) {
+                    newManualSelections[id] = true;
+                } else {
+                    delete newManualSelections[id];
+                }
+                return {
+                    ...prev,
+                    manualSelections: newManualSelections
+                };
+            }
+        });
     }
 
     function exportSelected(format: 'csv' | 'pdf' | 'docx') {
@@ -390,13 +484,41 @@ export default function Index() {
     async function confirmBulkDelete() {
         const ids = getSelectedIds();
         if (!ids.length) return setBulkDeleteOpen(false);
+        
         try {
-            const res = await fetch('/ideas/delete-selected', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '' }, body: JSON.stringify({ ids }) });
+            // If selectAll is true, we need to send the current filters to the backend
+            // so it knows which items to delete
+            const payload: any = { ids };
+            
+            if (selectionState.selectAll) {
+                payload.selectAll = true;
+                payload.exceptions = Object.keys(selectionState.exceptions).map(Number);
+                payload.filters = {
+                    search: query,
+                    ...filters
+                };
+            }
+            
+            const res = await fetch('/ideas/delete-selected', { 
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '' 
+                }, 
+                body: JSON.stringify(payload) 
+            });
+            
             if (res.ok) {
-                // Clear selected items from sessionStorage after successful deletion
-                sessionStorage.removeItem('selectedIdeas');
+                // Clear selection state after successful deletion
+                setSelectionState({
+                    selectAll: false,
+                    exceptions: {},
+                    manualSelections: {}
+                });
+                sessionStorage.removeItem('ideasSelectionState');
                 router.reload();
-                toast.success(`${ids.length} idea${ids.length > 1 ? 's' : ''} deleted successfully!`);
+                const totalCount = getTotalSelectedCount();
+                toast.success(`${totalCount} idea${totalCount > 1 ? 's' : ''} deleted successfully!`);
             } else {
                 toast.error('Failed to delete selected ideas. Please try again.');
                 console.warn('confirmBulkDelete returned', res.status);
@@ -652,7 +774,17 @@ export default function Index() {
                     />
                 </div>
 
-                <SelectionToolbar total={ideas.total} selectedCount={getSelectedIds().length} currentPageCount={ideas.data.length} onSelectAll={onSelectAll} onExport={exportSelected} onDeleteSelected={deleteSelected} onSelectAllInDatabase={onSelectAllInDatabase} />
+                <SelectionToolbar 
+                    total={ideas.total} 
+                    selectedCount={getSelectedCountOnCurrentPage()} 
+                    currentPageCount={ideas.data.length} 
+                    totalSelectedCount={getTotalSelectedCount()}
+                    allSelected={selectionState.selectAll}
+                    onSelectAll={onSelectAll} 
+                    onExport={exportSelected} 
+                    onDeleteSelected={deleteSelected} 
+                    onSelectAllInDatabase={onSelectAllInDatabase} 
+                />
                 {loading ? (
                     <div className="flex flex-col gap-6">
                         {Array.from({ length: 4 }).map((_, i) => (
@@ -699,7 +831,7 @@ export default function Index() {
                                     <div className="flex items-start justify-between mb-4">
                                         <input
                                             type="checkbox"
-                                            checked={!!selected[idea.id]}
+                                            checked={isItemSelected(idea.id)}
                                             onChange={(e) => onSelectOne(idea.id, e.target.checked)}
                                             className="h-5 w-5 rounded border-gray-300 dark:border-gray-600 mr-3 cursor-pointer" />
 
@@ -945,7 +1077,7 @@ export default function Index() {
                 )}
             </div>
             <DeleteModal open={singleDeleteOpen} title="Delete idea" body={`Are you sure you want to delete idea #${singleDeleteId}?`} onCancel={() => setSingleDeleteOpen(false)} onConfirm={confirmSingleDelete} />
-            <DeleteModal open={bulkDeleteOpen} title="Delete selected ideas" body={`Are you sure you want to delete ${getSelectedIds().length} selected ideas?`} onCancel={() => setBulkDeleteOpen(false)} onConfirm={confirmBulkDelete} />
+            <DeleteModal open={bulkDeleteOpen} title="Delete selected ideas" body={`Are you sure you want to delete ${getTotalSelectedCount()} selected ideas?`} onCancel={() => setBulkDeleteOpen(false)} onConfirm={confirmBulkDelete} />
         </AppLayout>
     );
 }
