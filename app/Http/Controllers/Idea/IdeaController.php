@@ -39,6 +39,9 @@ class IdeaController extends Controller
         $likedIdeaIds = [];
         
         if (!$user) {
+            if ($request->get('get_all_ids')) {
+                return response()->json(['ids' => []]);
+            }
             return Inertia::render('Ideas/Index', ['ideas' => collect(), 'thematicAreas' => []]);
         }
 
@@ -150,6 +153,12 @@ class IdeaController extends Controller
 
         // Get thematic areas for filters
         $thematicAreas = ThematicArea::active()->ordered()->get(['id', 'name']);
+
+        // If requesting all IDs for selection, return JSON
+        if ($request->get('get_all_ids')) {
+            $allIds = $query->pluck('id')->toArray();
+            return response()->json(['ids' => $allIds]);
+        }
 
         return Inertia::render('Ideas/Index', compact('ideas', 'thematicAreas'));
     }

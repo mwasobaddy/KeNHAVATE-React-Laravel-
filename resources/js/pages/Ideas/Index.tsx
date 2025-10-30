@@ -309,8 +309,8 @@ export default function Index() {
                 });
             }
             
-            // Set a very high limit to get all IDs
-            params.set('per_page', '10000'); // Assuming no user has more than 10k ideas
+            // Request all IDs instead of paginated data
+            params.set('get_all_ids', 'true');
             
             const response = await fetch(`${ideasRoutes.index.url()}?${params.toString()}`, {
                 headers: {
@@ -321,10 +321,12 @@ export default function Index() {
             
             if (response.ok) {
                 const data = await response.json();
-                const allIds = data.data.map((idea: any) => idea.id);
+                const allIds = data.ids;
                 const map: Record<number, boolean> = {};
                 allIds.forEach((id: number) => (map[id] = true));
                 setSelected(map);
+            } else {
+                console.error('Failed to fetch all IDs:', response.status, response.statusText);
             }
         } catch (error) {
             console.error('Failed to select all items:', error);
