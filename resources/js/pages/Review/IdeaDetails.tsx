@@ -171,7 +171,7 @@ export default function IdeaDetails({ idea, canReview, reviewStage }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Review - ${idea.idea_title}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <Link

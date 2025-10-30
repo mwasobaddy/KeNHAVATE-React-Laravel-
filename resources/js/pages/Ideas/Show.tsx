@@ -39,11 +39,7 @@ export default function Show() {
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Home',
-            href: '/',
-        },
-        {
-            title: 'Ideas',
-            href: ideasRoutes.index.url(),
+            href: '/dashboard',
         },
         {
             title: `View Idea`,
@@ -56,7 +52,7 @@ export default function Show() {
             <Head title={`View Idea: ${idea.idea_title}`} />
 
             {/* Main Container */}
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
                 {/* Header with add idea button at the end */}
                 <div className="flex items-center justify-between mb-2">
                     <div className="relative mb-2">

@@ -197,7 +197,7 @@ export default function Comments({ idea, comments }: Props) {
             <Head title={`Comments - ${idea.title}`} />
 
             {/* Main Container */}
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
                 {/* Header with back button */}
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-4">

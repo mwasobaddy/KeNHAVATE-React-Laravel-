@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
-import { MessageSquare, CheckCircle, XCircle, Eye, ArrowLeft, Clock, Filter } from 'lucide-react';
+import { MessagesSquare, CheckCircle, XCircle, Eye, ArrowLeft, Clock, Filter } from 'lucide-react';
 import { toast } from 'react-toastify';
 import AdvancedFilters from '@/components/AdvancedFilters';
 import SearchBar from '@/components/SearchBar';
@@ -36,10 +36,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Home',
         href: '/',
-    },
-    {
-        title: 'Collaboration',
-        href: '/collaboration',
     },
     {
         title: 'Inbox',
@@ -155,20 +151,12 @@ export default function Inbox({ requests }: Props) {
             <Head title="Collaboration Inbox" />
 
             {/* Main Container */}
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
-                    <Link
-                        href="/collaboration"
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                        Back to Collaboration
-                    </Link>
-                    
                     <div className="relative">
                         <h2 className="flex items-center gap-2 text-3xl md:text-4xl font-extrabold tracking-tight">
-                            <MessageSquare className='w-10 h-10 text-3xl md:text-4xl dark:text-[#fff200] font-black' />
+                            <MessagesSquare className='w-10 h-10 text-3xl md:text-4xl dark:text-[#fff200] font-black' />
                             <span className='bg-clip-text text-transparent bg-gradient-to-r from-black to-[#fff200] dark:bg-gradient-to-r dark:from-[#FFF200] dark:to-[#F8EBD5]'>
                                 Inbox
                             </span>
@@ -182,15 +170,17 @@ export default function Inbox({ requests }: Props) {
                     <SearchBar 
                         value={searchQuery} 
                         onChange={setSearchQuery} 
-                        placeholder="Search by requester name or idea title..." 
+                        placeholder="Search by requester name or idea title..."
+                        showFilterToggle={true}
+                        filterVisible={filtersVisible}
+                        onFilterToggle={() => setFiltersVisible(!filtersVisible)}
+                        activeFilterCount={Object.keys(appliedFilters).length}
                     />
                     
                     <AdvancedFilters
                         filters={filterConfig}
                         onFilterChange={handleFilterChange}
                         visible={filtersVisible}
-                        onToggle={() => setFiltersVisible(!filtersVisible)}
-                        showToggleButton={true}
                     />
                 </div>
 
@@ -207,8 +197,8 @@ export default function Inbox({ requests }: Props) {
                                     className="h-12 w-12 rounded-full object-cover shadow-md flex-shrink-0" />
 
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
+                                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             <h3 className="text-lg font-semibold text-[#231F20] dark:text-white">
                                                 {request.requester.name}
                                             </h3>
@@ -226,6 +216,9 @@ export default function Inbox({ requests }: Props) {
                                         Wants to collaborate on: <span className="font-medium">"{request.idea.title}"</span>
                                     </p>
 
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Idea Status: {request.idea.status.replace(' ', ' ').toUpperCase()}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Owner: {request.idea.user.name}</p>
+
                                     {request.message && (
                                         <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3 mb-4">
                                             <p className="text-sm text-gray-700 dark:text-gray-300 italic">
@@ -233,57 +226,50 @@ export default function Inbox({ requests }: Props) {
                                             </p>
                                         </div>
                                     )}
+                                    
+                                    <div className="flex items-center gap-3 justify-end">
+                                        <Link
+                                            href={`/ideas/${request.idea.slug}/view`}
+                                            className="flex items-center gap-2 p-4 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium shadow-md hover:shadow-lg transition-all duration-300"
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                            <span className='hidden sm:block'>View Idea</span>
+                                        </Link>
 
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                                            <span>Idea Status: {request.idea.status.replace(' ', ' ').toUpperCase()}</span>
-                                            <span>Owner: {request.idea.user.name}</span>
-                                        </div>
+                                        {request.status === 'pending' && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleRespond(request.id, 'approve')}
+                                                    disabled={respondingRequests.has(request.id)}
+                                                    className="flex items-center gap-2 p-4 sm:px-4 sm:py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm font-medium shadow-md hover:shadow-lg transition-all duration-300"
+                                                >
+                                                    {respondingRequests.has(request.id) ? (
+                                                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                    ) : (
+                                                        <CheckCircle className="h-4 w-4" />
+                                                    )}
+                                                    <span className='hidden sm:block'>Approve</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRespond(request.id, 'reject')}
+                                                    disabled={respondingRequests.has(request.id)}
+                                                    className="flex items-center gap-2 p-4 sm:px-4 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-medium shadow-md hover:shadow-lg transition-all duration-300"
+                                                >
+                                                    {respondingRequests.has(request.id) ? (
+                                                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                    ) : (
+                                                        <XCircle className="h-4 w-4" />
+                                                    )}
+                                                    <span className='hidden sm:block'>Reject</span>
+                                                </button>
+                                            </>
+                                        )}
 
-                                        <div className="flex items-center gap-3">
-                                            <Link
-                                                href={`/ideas/${request.idea.slug}/view`}
-                                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm"
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                                View Idea
-                                            </Link>
-
-                                            {request.status === 'pending' && (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleRespond(request.id, 'approve')}
-                                                        disabled={respondingRequests.has(request.id)}
-                                                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50 text-sm"
-                                                    >
-                                                        {respondingRequests.has(request.id) ? (
-                                                            <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                        ) : (
-                                                            <CheckCircle className="h-4 w-4" />
-                                                        )}
-                                                        Approve
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleRespond(request.id, 'reject')}
-                                                        disabled={respondingRequests.has(request.id)}
-                                                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 text-sm"
-                                                    >
-                                                        {respondingRequests.has(request.id) ? (
-                                                            <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                        ) : (
-                                                            <XCircle className="h-4 w-4" />
-                                                        )}
-                                                        Reject
-                                                    </button>
-                                                </>
-                                            )}
-
-                                            {request.status !== 'pending' && request.responded_at && (
-                                                <span className="text-sm text-gray-500 dark:text-gray-400">
-                                                    Responded {request.responded_at}
-                                                </span>
-                                            )}
-                                        </div>
+                                        {request.status !== 'pending' && request.responded_at && (
+                                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                                                Responded {request.responded_at}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -293,7 +279,7 @@ export default function Inbox({ requests }: Props) {
 
                 {filteredRequests.length === 0 && (
                     <div className="text-center py-12">
-                        <MessageSquare className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                        <MessagesSquare className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">
                             {Object.keys(appliedFilters).length > 0 ? 'No requests match your filters' : 'No collaboration requests'}
                         </h3>

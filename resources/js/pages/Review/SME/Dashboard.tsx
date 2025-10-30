@@ -132,7 +132,7 @@ export default function SMEDashboard({ ideasForReview, reviewedIdeas }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="SME Review Dashboard" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
                 {/* Header */}
                 <div className="relative mb-6">
                     <h2 className="flex items-center gap-2 text-3xl md:text-4xl font-extrabold tracking-tight">

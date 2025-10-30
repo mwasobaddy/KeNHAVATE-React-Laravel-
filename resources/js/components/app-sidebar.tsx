@@ -270,7 +270,7 @@ export function AppSidebar() {
     const mainNavItems = getMainNavItems(auth.user);
 
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar collapsible="icon" variant="sidebar">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>

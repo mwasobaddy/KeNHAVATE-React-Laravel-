@@ -113,7 +113,7 @@ class CollaborationProposalController extends Controller
             ...$validated,
         ]);
 
-        return redirect()->route('collaboration.index')
+        return redirect()->route('collaboration.hub')
             ->with('success', 'Collaboration proposal submitted successfully!');
     }
 

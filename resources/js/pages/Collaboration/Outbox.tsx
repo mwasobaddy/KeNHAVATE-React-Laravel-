@@ -37,10 +37,6 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/',
     },
     {
-        title: 'Collaboration',
-        href: '/collaboration',
-    },
-    {
         title: 'Outbox',
         href: '#',
     },
@@ -113,17 +109,9 @@ export default function Outbox({ requests }: Props) {
             <Head title="Collaboration Outbox" />
 
             {/* Main Container */}
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
-                    <Link
-                        href="/collaboration"
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                        Back to Collaboration
-                    </Link>
-                    
                     <div className="relative">
                         <h2 className="flex items-center gap-2 text-3xl md:text-4xl font-extrabold tracking-tight">
                             <Send className='w-10 h-10 text-3xl md:text-4xl dark:text-[#fff200] font-black' />
@@ -140,15 +128,17 @@ export default function Outbox({ requests }: Props) {
                     <SearchBar 
                         value={searchQuery} 
                         onChange={setSearchQuery} 
-                        placeholder="Search by owner name or idea title..." 
+                        placeholder="Search by owner name or idea title..."
+                        showFilterToggle={true}
+                        filterVisible={filtersVisible}
+                        onFilterToggle={() => setFiltersVisible(!filtersVisible)}
+                        activeFilterCount={Object.keys(appliedFilters).length}
                     />
                     
                     <AdvancedFilters
                         filters={filterConfig}
                         onFilterChange={handleFilterChange}
                         visible={filtersVisible}
-                        onToggle={() => setFiltersVisible(!filtersVisible)}
-                        showToggleButton={true}
                     />
                 </div>
 

@@ -18,16 +18,12 @@ interface Props {
     filters: FilterConfig[];
     onFilterChange: (filters: Record<string, any>) => void;
     visible?: boolean;
-    onToggle?: () => void;
-    showToggleButton?: boolean;
 }
 
 export default function AdvancedFilters({ 
     filters, 
     onFilterChange, 
-    visible = true, 
-    onToggle,
-    showToggleButton = true 
+    visible = true
 }: Props) {
     const [selectedFilters, setSelectedFilters] = useState<Record<string, any>>({});
 
@@ -151,26 +147,6 @@ export default function AdvancedFilters({
 
     return (
         <div className="w-full">
-            {/* Toggle Button */}
-            {showToggleButton && (
-                <div className="mb-4">
-                    <button
-                        onClick={onToggle}
-                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#231F20]/90 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                    >
-                        <Filter className="w-4 h-4 text-[#231F20] dark:text-[#F8EBD5]" />
-                        <span className="font-medium text-[#231F20] dark:text-[#F8EBD5]">
-                            {visible ? 'Hide Filters' : 'Show Filters'}
-                        </span>
-                        {activeFilterCount > 0 && (
-                            <span className="bg-blue-600 dark:bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-                                {activeFilterCount}
-                            </span>
-                        )}
-                    </button>
-                </div>
-            )}
-
             {/* Filter Content */}
             {visible && (
                 <>
@@ -220,7 +196,7 @@ export default function AdvancedFilters({
                     )}
 
                     {/* Filter Inputs */}
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-3 mt-4">
                         {filters.map((filter) => renderFilterInput(filter))}
                     </div>
                 </>

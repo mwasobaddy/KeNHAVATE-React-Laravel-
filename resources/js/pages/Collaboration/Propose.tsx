@@ -57,10 +57,6 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/',
     },
     {
-        title: 'Collaboration',
-        href: '/collaboration',
-    },
-    {
         title: 'Propose Changes',
         href: '#',
     },
@@ -155,17 +151,9 @@ export default function Propose({ idea, thematicAreas }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Propose Changes - ${idea.idea_title}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
-                    <Link
-                        href="/collaboration"
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                        Back to Collaboration
-                    </Link>
-
                     <div className="flex items-center gap-4">
                         <button
                             type="button"
