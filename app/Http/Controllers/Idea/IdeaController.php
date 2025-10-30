@@ -9,6 +9,7 @@ use App\Models\Idea;
 use App\Models\IdeaLike;
 use App\Models\ThematicArea;
 use App\Models\TeamMember;
+use App\Models\CollaborationRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request as HttpRequest;
@@ -31,18 +32,94 @@ class IdeaController extends Controller
         return redirect()->route($route, $params)->with($type, $message);
     }
     // index, show, create, store, edit, update, destroy methods would go here
-    public function index()
+    public function index(Request $request)
     {
         // fetch and return a list of ideas
         $user = auth()->user();
         $likedIdeaIds = [];
-        if ($user) {
-            $likedIdeaIds = IdeaLike::where('user_id', $user->id)->pluck('idea_id')->toArray();
+        
+        if (!$user) {
+            return Inertia::render('Ideas/Index', ['ideas' => collect(), 'thematicAreas' => []]);
         }
 
-        $ideas = collect(); // Default empty collection
-        if ($user) {
-            $ideas = Idea::with('user')->withTeam()->where('user_id', $user->id)->get()->map(function ($idea) use ($likedIdeaIds) {
+        $likedIdeaIds = IdeaLike::where('user_id', $user->id)->pluck('idea_id')->toArray();
+
+        $query = Idea::with('user', 'thematicArea')
+            ->withTeam()
+            ->where('user_id', $user->id);
+
+        // Apply search filter
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('idea_title', 'LIKE', "%{$search}%")
+                  ->orWhere('abstract', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Apply status filter
+        if ($status = $request->get('status')) {
+            $query->where('status', $status);
+        }
+
+        // Apply thematic area filter
+        if ($thematicArea = $request->get('thematicArea')) {
+            $query->where('thematic_area_id', $thematicArea);
+        }
+
+        // Apply revision filters
+        if ($minRevisions = $request->get('minRevisions')) {
+            $query->where('current_revision_number', '>=', $minRevisions);
+        }
+        
+        if ($maxRevisions = $request->get('maxRevisions')) {
+            $query->where('current_revision_number', '<=', $maxRevisions);
+        }
+
+        // Apply collaboration deadline filter
+        if ($collaborationDeadline = $request->get('collaborationDeadline')) {
+            $query->whereDate('collaboration_deadline', $collaborationDeadline);
+        }
+
+        // Apply date range filters
+        if ($createdAfter = $request->get('createdAfter')) {
+            $query->whereDate('created_at', '>=', $createdAfter);
+        }
+        
+        if ($createdBefore = $request->get('createdBefore')) {
+            $query->whereDate('created_at', '<=', $createdBefore);
+        }
+
+        // Apply feature filters
+        if ($features = $request->get('features')) {
+            if (is_array($features)) {
+                foreach ($features as $feature) {
+                    switch ($feature) {
+                        case 'collaboration_enabled':
+                            $query->where('collaboration_enabled', true);
+                            break;
+                        case 'comments_enabled':
+                            $query->where('comments_enabled', true);
+                            break;
+                        case 'team_effort':
+                            $query->where('team_effort', true);
+                            break;
+                        case 'original_idea_disclaimer':
+                            $query->where('original_idea_disclaimer', true);
+                            break;
+                        case 'has_attachment':
+                            $query->whereNotNull('attachment_filename');
+                            break;
+                    }
+                }
+            }
+        }
+
+        // Order by creation date (newest first)
+        $query->orderBy('created_at', 'desc');
+
+        $ideas = $query->paginate(10)
+            ->withQueryString() // Preserve query parameters in pagination links
+            ->through(function ($idea) use ($likedIdeaIds) {
                 return [
                     'id' => $idea->id,
                     'title' => $idea->idea_title,
@@ -58,12 +135,23 @@ class IdeaController extends Controller
                     'current_revision_number' => $idea->current_revision_number,
                     'slug' => $idea->slug,
                     'liked_by_user' => in_array($idea->id, $likedIdeaIds),
+                    'team_effort' => $idea->team_effort,
+                    'original_idea_disclaimer' => $idea->original_idea_disclaimer,
+                    'collaboration_deadline' => $idea->collaboration_deadline,
+                    'attachment_filename' => $idea->attachment_filename,
+                    'attachment_size' => $idea->attachment_size,
+                    'attachment_mime' => $idea->attachment_mime,
+                    'thematic_area' => $idea->thematicArea ? [
+                        'id' => $idea->thematicArea->id,
+                        'name' => $idea->thematicArea->name
+                    ] : null,
                 ];
             });
-        }
 
-        return Inertia::render('Ideas/Index', compact('ideas'));
+        // Get thematic areas for filters
+        $thematicAreas = ThematicArea::active()->ordered()->get(['id', 'name']);
 
+        return Inertia::render('Ideas/Index', compact('ideas', 'thematicAreas'));
     }
 
     public function show($slug)
@@ -249,21 +337,112 @@ class IdeaController extends Controller
         return $this->flashMessageToRoute('ideas.show', 'Idea updated successfully!', [$idea->slug]);
     }
     
-    public function publicIndex()
+    public function publicIndex(Request $request)
     {
         // fetch and return a list of ideas where collaboration and comments are enabled
         $user = auth()->user();
         $likedIdeaIds = [];
+        $collaborationRequestIds = [];
+        
         if ($user) {
             $likedIdeaIds = IdeaLike::where('user_id', $user->id)->pluck('idea_id')->toArray();
+            
+            // Get collaboration requests made by the current user
+            $collaborationRequests = CollaborationRequest::where('requester_id', $user->id)
+                ->get()
+                ->keyBy('idea_id');
+            $collaborationRequestIds = $collaborationRequests->toArray();
         }
 
-        $ideas = Idea::with('user')
+        $query = Idea::with('user', 'thematicArea')
             ->withTeam()
             ->where('collaboration_enabled', true)
             ->where('comments_enabled', true)
-            ->get()
-            ->map(function ($idea) use ($likedIdeaIds, $user) {
+            ->when($user, function ($q) use ($user) {
+                return $q->where('user_id', '!=', $user->id);
+            });
+
+        // Apply search filter
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('idea_title', 'LIKE', "%{$search}%")
+                  ->orWhere('abstract', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // Apply status filter
+        if ($status = $request->get('status')) {
+            $query->where('status', $status);
+        }
+
+        // Apply thematic area filter
+        if ($thematicArea = $request->get('thematicArea')) {
+            $query->where('thematic_area_id', $thematicArea);
+        }
+
+        // Apply revision filters
+        if ($minRevisions = $request->get('minRevisions')) {
+            $query->where('current_revision_number', '>=', $minRevisions);
+        }
+        
+        if ($maxRevisions = $request->get('maxRevisions')) {
+            $query->where('current_revision_number', '<=', $maxRevisions);
+        }
+
+        // Apply collaboration deadline filter
+        if ($collaborationDeadline = $request->get('collaborationDeadline')) {
+            $query->whereDate('collaboration_deadline', $collaborationDeadline);
+        }
+
+        // Apply date range filters
+        if ($createdAfter = $request->get('createdAfter')) {
+            $query->whereDate('created_at', '>=', $createdAfter);
+        }
+        
+        if ($createdBefore = $request->get('createdBefore')) {
+            $query->whereDate('created_at', '<=', $createdBefore);
+        }
+
+        // Apply feature filters
+        if ($features = $request->get('features')) {
+            if (is_array($features)) {
+                foreach ($features as $feature) {
+                    switch ($feature) {
+                        case 'collaboration_enabled':
+                            $query->where('collaboration_enabled', true);
+                            break;
+                        case 'comments_enabled':
+                            $query->where('comments_enabled', true);
+                            break;
+                        case 'team_effort':
+                            $query->where('team_effort', true);
+                            break;
+                        case 'original_idea_disclaimer':
+                            $query->where('original_idea_disclaimer', true);
+                            break;
+                        case 'has_attachment':
+                            $query->whereNotNull('attachment_filename');
+                            break;
+                    }
+                }
+            }
+        }
+
+        // Order by creation date (newest first)
+        $query->orderBy('created_at', 'desc');
+
+        $ideas = $query->paginate(10)
+            ->withQueryString() // Preserve query parameters in pagination links
+            ->through(function ($idea) use ($likedIdeaIds, $collaborationRequestIds, $user) {
+                $collaborationRequest = null;
+                if ($user && isset($collaborationRequestIds[$idea->id])) {
+                    $request = $collaborationRequestIds[$idea->id];
+                    $collaborationRequest = [
+                        'id' => $request['id'],
+                        'status' => $request['status']
+                    ];
+                }
+                
                 return [
                     'id' => $idea->id,
                     'title' => $idea->idea_title,
@@ -280,10 +459,24 @@ class IdeaController extends Controller
                     'slug' => $idea->slug,
                     'liked_by_user' => in_array($idea->id, $likedIdeaIds),
                     'is_author' => $user && $idea->user_id === $user->id,
+                    'collaboration_request' => $collaborationRequest,
+                    'team_effort' => $idea->team_effort,
+                    'original_idea_disclaimer' => $idea->original_idea_disclaimer,
+                    'collaboration_deadline' => $idea->collaboration_deadline,
+                    'attachment_filename' => $idea->attachment_filename,
+                    'attachment_size' => $idea->attachment_size,
+                    'attachment_mime' => $idea->attachment_mime,
+                    'thematic_area' => $idea->thematicArea ? [
+                        'id' => $idea->thematicArea->id,
+                        'name' => $idea->thematicArea->name
+                    ] : null,
                 ];
             });
 
-        return Inertia::render('Ideas/PublicIndex', compact('ideas'));
+        // Get thematic areas for filters
+        $thematicAreas = ThematicArea::active()->ordered()->get(['id', 'name']);
+
+        return Inertia::render('Ideas/PublicIndex', compact('ideas', 'thematicAreas'));
 
     }
 
