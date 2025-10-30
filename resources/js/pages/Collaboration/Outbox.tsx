@@ -109,7 +109,7 @@ export default function Outbox({ requests }: Props) {
             <Head title="Collaboration Outbox" />
 
             {/* Main Container */}
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[50px]">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="relative">
@@ -155,8 +155,8 @@ export default function Outbox({ requests }: Props) {
                                     className="h-12 w-12 rounded-full object-cover shadow-md flex-shrink-0" />
 
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
+                                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                                        <div className="flex items-center flex-wrap gap-2">
                                             <h3 className="text-lg font-semibold text-[#231F20] dark:text-white">
                                                 Sent to {request.owner.name}
                                             </h3>
@@ -174,6 +174,14 @@ export default function Outbox({ requests }: Props) {
                                         Collaboration request for: <span className="font-medium">"{request.idea.title}"</span>
                                     </p>
 
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                        Idea Status: {request.idea.status.replace(' ', ' ').toUpperCase()}
+                                    </p>
+
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                                        Owner: {request.idea.user.name}
+                                    </p>
+
                                     {request.message && (
                                         <div className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-3 mb-4">
                                             <p className="text-sm text-gray-700 dark:text-gray-300 italic">
@@ -182,32 +190,27 @@ export default function Outbox({ requests }: Props) {
                                         </div>
                                     )}
 
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                                            <span>Idea Status: {request.idea.status.replace(' ', ' ').toUpperCase()}</span>
-                                            <span>Owner: {request.idea.user.name}</span>
-                                        </div>
+                                    <div className="flex justify-end items-center">
+                                        {request.status === 'pending' && (
+                                            <span className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
+                                                Awaiting response
+                                            </span>
+                                        )}
 
-                                        <div className="flex items-center gap-3">
-                                            <Link
-                                                href={`/ideas/${request.idea.slug}/view`}
-                                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm"
-                                            >
-                                                <Eye className="h-4 w-4" />
-                                                View Idea
-                                            </Link>
-
+                                        <div className='flex items-center gap-3 justify-end flex-1'>
                                             {request.status !== 'pending' && request.responded_at && (
-                                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                                <span className="text-sm text-gray-500 dark:text-gray-400 flex-1">
                                                     Responded {request.responded_at}
                                                 </span>
                                             )}
 
-                                            {request.status === 'pending' && (
-                                                <span className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
-                                                    Awaiting response
-                                                </span>
-                                            )}
+                                            <Link
+                                                href={`/ideas/${request.idea.slug}/view`}
+                                                    className="flex items-center gap-2 p-4 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium shadow-md hover:shadow-lg transition-all duration-300"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                    <span className='hidden sm:block'>View Idea</span>
+                                            </Link>
                                         </div>
                                     </div>
                                 </div>

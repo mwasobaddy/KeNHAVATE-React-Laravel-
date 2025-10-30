@@ -150,7 +150,7 @@ export default function MyProposals({ proposals }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="My Collaboration Proposals" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[40px]">
+            <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6 bg-transparent text-[#231F20] dark:text-white transition-colors mt-[50px]">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="relative">
@@ -203,7 +203,7 @@ export default function MyProposals({ proposals }: Props) {
                                         <span className="font-medium">Change Summary:</span> {proposal.change_summary}
                                     </p>
 
-                                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                    <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
                                         <div className="flex items-center gap-1">
                                             <User className="h-4 w-4" />
                                             <span>Author: {proposal.original_author.name}</span>
@@ -235,7 +235,7 @@ export default function MyProposals({ proposals }: Props) {
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
                                 <div className="flex items-center gap-2">
                                     {proposal.status === 'pending' && (
                                         <span className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
@@ -259,13 +259,13 @@ export default function MyProposals({ proposals }: Props) {
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 flex-1 justify-end">
                                     <Link
                                         href={`/ideas/${proposal.idea.slug}/view`}
                                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-sm"
                                     >
                                         <FileText className="h-4 w-4" />
-                                        View Idea
+                                        View&nbsp;Idea
                                     </Link>
 
                                     <Link
@@ -273,7 +273,7 @@ export default function MyProposals({ proposals }: Props) {
                                         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all text-sm"
                                     >
                                         <Eye className="h-4 w-4" />
-                                        View Details
+                                        View&nbsp;Details
                                     </Link>
                                 </div>
                             </div>
