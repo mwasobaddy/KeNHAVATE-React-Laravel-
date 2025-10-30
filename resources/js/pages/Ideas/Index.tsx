@@ -119,7 +119,15 @@ export default function Index() {
     });
     
     const [filtersVisible, setFiltersVisible] = useState(false);
-    const [selected, setSelected] = useState<Record<number, boolean>>({});
+    const [selected, setSelected] = useState<Record<number, boolean>>(() => {
+        // Load selected items from sessionStorage to persist across page changes
+        try {
+            const stored = sessionStorage.getItem('selectedIdeas');
+            return stored ? JSON.parse(stored) : {};
+        } catch {
+            return {};
+        }
+    });
     const [loading, setLoading] = useState(false);
     const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
     const [likesMap, setLikesMap] = useState<Record<number, number>>({});
@@ -128,6 +136,18 @@ export default function Index() {
     const [singleDeleteOpen, setSingleDeleteOpen] = useState(false);
     const [singleDeleteId, setSingleDeleteId] = useState<number | null>(null);
     const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
+    // Save selected items to sessionStorage whenever selection changes
+    useEffect(() => {
+        sessionStorage.setItem('selectedIdeas', JSON.stringify(selected));
+    }, [selected]);
+
+    // Clear selected items from sessionStorage when component unmounts
+    useEffect(() => {
+        return () => {
+            sessionStorage.removeItem('selectedIdeas');
+        };
+    }, []);
 
     const filterConfig: FilterConfig[] = [
         {
@@ -373,6 +393,8 @@ export default function Index() {
         try {
             const res = await fetch('/ideas/delete-selected', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '' }, body: JSON.stringify({ ids }) });
             if (res.ok) {
+                // Clear selected items from sessionStorage after successful deletion
+                sessionStorage.removeItem('selectedIdeas');
                 router.reload();
                 toast.success(`${ids.length} idea${ids.length > 1 ? 's' : ''} deleted successfully!`);
             } else {
