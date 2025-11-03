@@ -12,6 +12,8 @@ use App\Http\Controllers\ChallengeController;
 use App\Http\Controllers\ChallengeSubmissionController;
 use App\Http\Controllers\ChallengeReviewController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ProfileController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -19,7 +21,21 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+// Custom Authentication Routes
+Route::middleware('guest')->group(function () {
+    Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('login', [LoginController::class, 'submitEmail'])->name('login.submit');
+    Route::get('login/verify', [LoginController::class, 'showOTPForm'])->name('login.verify');
+    Route::post('login/verify', [LoginController::class, 'verifyOTP'])->name('login.verify.submit');
+    Route::post('login/resend', [LoginController::class, 'resendOTP'])->name('login.resend');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+});
+
+Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Idea routes - Basic access for all authenticated users
