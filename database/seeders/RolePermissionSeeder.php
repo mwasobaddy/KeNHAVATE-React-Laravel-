@@ -354,7 +354,7 @@ class RolePermissionSeeder extends Seeder
             'name' => 'Kelvin Mwangi',
             'slug' => 'kelvin-mwangi',
             'username' => 'system_admin',
-            'email' => 'kelvinramsiel@gmail.com',
+            'email' => 'kelvinramsiel02@gmail.com',
             'password' => bcrypt('kelvin1234'),
             'email_verified_at' => now(),
         ]);

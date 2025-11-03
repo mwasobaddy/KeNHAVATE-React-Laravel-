@@ -1,6 +1,6 @@
 import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import AppLayout from '@/layouts/app-layout';
-import { dashboard } from '@/routes';
+import { dashboard } from '@/routes/index';
 import { type BreadcrumbItem } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
 import { Users, Lightbulb, Trophy, GitBranch, TrendingUp, Clock, CheckCircle, XCircle, BarChart3, Settings, FileText, Search, X, RotateCcw, Activity } from 'lucide-react';
