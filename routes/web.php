@@ -28,6 +28,10 @@ Route::middleware('guest')->group(function () {
     Route::get('login/verify', [LoginController::class, 'showOTPForm'])->name('login.verify');
     Route::post('login/verify', [LoginController::class, 'verifyOTP'])->name('login.verify.submit');
     Route::post('login/resend', [LoginController::class, 'resendOTP'])->name('login.resend');
+
+    // Google OAuth routes
+    Route::get('auth/google', [LoginController::class, 'redirectToGoogle'])->name('auth.google');
+    Route::get('auth/google/callback', [LoginController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 });
 
 Route::middleware('auth')->group(function () {
