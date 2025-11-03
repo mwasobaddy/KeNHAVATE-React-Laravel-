@@ -25,6 +25,7 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
+        'department_id',
     ];
 
     /**
@@ -83,5 +84,37 @@ class User extends Authenticatable
     public function receivedCollaborationRequests()
     {
         return $this->hasMany(CollaborationRequest::class, 'owner_id');
+    }
+
+    /**
+     * Get the department that this user belongs to.
+     */
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * Get the directorate through the department.
+     */
+    public function directorate()
+    {
+        return $this->department?->directorate();
+    }
+
+    /**
+     * Get the region through the department.
+     */
+    public function region()
+    {
+        return $this->department?->region();
+    }
+
+    /**
+     * Scope to order users by name.
+     */
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('name');
     }
 }
