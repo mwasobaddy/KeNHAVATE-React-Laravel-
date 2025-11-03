@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+use Laravel\Socialite\Facades\Socialite;
 
 class LoginController extends Controller
 {
@@ -127,7 +128,7 @@ class LoginController extends Controller
 
         $email = $otpData['email'];
 
-        // Find or create user
+        // Find existing user
         $user = User::where('email', $email)->first();
 
         if (!$user) {
@@ -137,6 +138,11 @@ class LoginController extends Controller
                 'password' => Hash::make(Str::random(32)), // Random password
                 'email_verified_at' => now(),
             ]);
+        } else {
+            // User exists - ensure they have email_verified_at set
+            if (!$user->email_verified_at) {
+                $user->update(['email_verified_at' => now()]);
+            }
         }
 
         // Log the user in
@@ -191,6 +197,82 @@ class LoginController extends Controller
         RateLimiter::hit($this->resendThrottleKey($request), 60); // 1 minute
 
         return back()->with('status', 'OTP sent successfully.');
+    }
+
+    /**
+     * Redirect to Google OAuth
+     */
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    /**
+     * Handle Google OAuth callback
+     */
+    public function handleGoogleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')->user();
+
+            // Find existing user or create new one
+            $user = User::where('google_id', $googleUser->getId())
+                       ->orWhere('email', $googleUser->getEmail())
+                       ->first();
+
+            if ($user) {
+                // Update existing user with Google info - merge intelligently
+                $updates = [];
+
+                if (!$user->google_id) {
+                    $updates['google_id'] = $googleUser->getId();
+                }
+
+                if (!$user->avatar && $googleUser->getAvatar()) {
+                    $updates['avatar'] = $googleUser->getAvatar();
+                }
+
+                if (!$user->provider) {
+                    $updates['provider'] = 'google';
+                }
+
+                // Merge name if it's missing or empty
+                if ((!$user->name || trim($user->name) === '') && $googleUser->getName()) {
+                    $updates['name'] = $googleUser->getName();
+                }
+
+                // Ensure email is verified
+                if (!$user->email_verified_at) {
+                    $updates['email_verified_at'] = now();
+                }
+
+                if (!empty($updates)) {
+                    $user->update($updates);
+                }
+            } else {
+                // Create new user
+                $user = User::create([
+                    'name' => $googleUser->getName(),
+                    'email' => $googleUser->getEmail(),
+                    'google_id' => $googleUser->getId(),
+                    'avatar' => $googleUser->getAvatar(),
+                    'provider' => 'google',
+                    'password' => Hash::make(Str::random(32)), // Random password for OAuth users
+                    'email_verified_at' => now(),
+                ]);
+            }
+
+            // Log the user in
+            Auth::login($user);
+
+            // Redirect to intended page or dashboard
+            return redirect()->intended(route('dashboard', absolute: false));
+
+        } catch (\Exception $e) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'Unable to authenticate with Google. Please try again.',
+            ]);
+        }
     }
 
     /**
