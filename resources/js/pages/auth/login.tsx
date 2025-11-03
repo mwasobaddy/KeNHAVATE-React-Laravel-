@@ -8,6 +8,7 @@ import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
+import { google } from '@/routes/auth';
 import { Form, Head } from '@inertiajs/react';
 import { Mail, Chrome } from 'lucide-react';
 
@@ -83,9 +84,12 @@ export default function Login({
                             className="w-full"
                             tabIndex={3}
                             disabled={processing}
+                            asChild
                         >
-                            <Chrome className="mr-2 h-4 w-4" />
-                            Continue with Google
+                            <a href={google().url}>
+                                <Chrome className="mr-2 h-4 w-4" />
+                                Continue with Google
+                            </a>
                         </Button>
 
                         {canRegister && (
