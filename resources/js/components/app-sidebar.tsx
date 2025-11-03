@@ -29,7 +29,9 @@ import {
     Trophy,
     Inbox,
     Send,
-    Mail
+    Mail,
+    Building2,
+    MapPin
 } from 'lucide-react';
 import AppLogo from './app-logo';
 
@@ -224,17 +226,23 @@ const getMainNavItems = (user: any): NavItem[] => {
     }
 
     // Admin section
-    if (user?.roles?.some((role: any) => role.name === 'admin')) {
-        baseItems.push({
-            title: 'Administration',
-            href: '/admin',
-            icon: Settings,
-            items: [
-                {
-                    title: 'Admin Dashboard',
-                    href: '/admin/dashboard',
-                    icon: LayoutGrid,
-                },
+    if (user?.roles?.some((role: any) => role.name === 'admin') ||
+        user?.permissions?.some((permission: any) =>
+            permission.name === 'manage.regions' ||
+            permission.name === 'manage.directorates' ||
+            permission.name === 'manage.departments'
+        )) {
+        const adminItems = [
+            {
+                title: 'Admin Dashboard',
+                href: '/admin/dashboard',
+                icon: LayoutGrid,
+            },
+        ];
+
+        // Add user management and system settings only for full admins
+        if (user?.roles?.some((role: any) => role.name === 'admin')) {
+            adminItems.push(
                 {
                     title: 'User Management',
                     href: '/admin/users',
@@ -244,8 +252,43 @@ const getMainNavItems = (user: any): NavItem[] => {
                     title: 'System Settings',
                     href: '/admin/settings',
                     icon: Settings,
-                },
-            ],
+                }
+            );
+        }
+
+        // Add organizational management for users with appropriate permissions
+        if (user?.permissions?.some((permission: any) => permission.name === 'manage.regions') ||
+            user?.roles?.some((role: any) => role.name === 'admin')) {
+            adminItems.push({
+                title: 'Regions',
+                href: '/administration/regions',
+                icon: MapPin,
+            });
+        }
+
+        if (user?.permissions?.some((permission: any) => permission.name === 'manage.directorates') ||
+            user?.roles?.some((role: any) => role.name === 'admin')) {
+            adminItems.push({
+                title: 'Directorates',
+                href: '/administration/directorates',
+                icon: Building2,
+            });
+        }
+
+        if (user?.permissions?.some((permission: any) => permission.name === 'manage.departments') ||
+            user?.roles?.some((role: any) => role.name === 'admin')) {
+            adminItems.push({
+                title: 'Departments',
+                href: '/administration/departments',
+                icon: Users,
+            });
+        }
+
+        baseItems.push({
+            title: 'Administration',
+            href: '/admin',
+            icon: Settings,
+            items: adminItems,
         });
     }
 

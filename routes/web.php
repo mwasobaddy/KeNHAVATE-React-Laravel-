@@ -10,6 +10,7 @@ use App\Http\Controllers\CollaborationProposalController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ChallengeController;
 use App\Http\Controllers\ChallengeSubmissionController;
+use App\Http\Controllers\ChallengeReviewController;
 use App\Http\Controllers\Dashboard\DashboardController;
 
 Route::get('/', function () {
@@ -76,6 +77,42 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     // User management routes will be added here
     // System settings routes will be added here
     // Reports and analytics routes will be added here
+});
+
+// Administration routes - Organizational structure management
+Route::middleware(['auth', 'verified'])->prefix('administration')->name('administration.')->group(function () {
+    // Regions management
+    Route::middleware(['permission:manage.regions'])->prefix('regions')->name('regions.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Administration\RegionController::class, 'index'])->name('index');
+        Route::get('create', [App\Http\Controllers\Administration\RegionController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Administration\RegionController::class, 'store'])->name('store');
+        Route::get('{region}', [App\Http\Controllers\Administration\RegionController::class, 'show'])->name('show');
+        Route::get('{region}/edit', [App\Http\Controllers\Administration\RegionController::class, 'edit'])->name('edit');
+        Route::patch('{region}', [App\Http\Controllers\Administration\RegionController::class, 'update'])->name('update');
+        Route::delete('{region}', [App\Http\Controllers\Administration\RegionController::class, 'destroy'])->name('destroy');
+    });
+
+    // Directorates management
+    Route::middleware(['permission:manage.directorates'])->prefix('directorates')->name('directorates.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Administration\DirectorateController::class, 'index'])->name('index');
+        Route::get('create', [App\Http\Controllers\Administration\DirectorateController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Administration\DirectorateController::class, 'store'])->name('store');
+        Route::get('{directorate}', [App\Http\Controllers\Administration\DirectorateController::class, 'show'])->name('show');
+        Route::get('{directorate}/edit', [App\Http\Controllers\Administration\DirectorateController::class, 'edit'])->name('edit');
+        Route::patch('{directorate}', [App\Http\Controllers\Administration\DirectorateController::class, 'update'])->name('update');
+        Route::delete('{directorate}', [App\Http\Controllers\Administration\DirectorateController::class, 'destroy'])->name('destroy');
+    });
+
+    // Departments management
+    Route::middleware(['permission:manage.departments'])->prefix('departments')->name('departments.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Administration\DepartmentController::class, 'index'])->name('index');
+        Route::get('create', [App\Http\Controllers\Administration\DepartmentController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Administration\DepartmentController::class, 'store'])->name('store');
+        Route::get('{department}', [App\Http\Controllers\Administration\DepartmentController::class, 'show'])->name('show');
+        Route::get('{department}/edit', [App\Http\Controllers\Administration\DepartmentController::class, 'edit'])->name('edit');
+        Route::patch('{department}', [App\Http\Controllers\Administration\DepartmentController::class, 'update'])->name('update');
+        Route::delete('{department}', [App\Http\Controllers\Administration\DepartmentController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Deputy Director routes - Workflow management and user oversight
@@ -152,6 +189,7 @@ Route::middleware(['auth', 'verified'])->prefix('review')->name('review.')->grou
         Route::get('submission/{submission}', [ChallengeReviewController::class, 'showSubmissionForReview'])->name('submission.show');
         Route::post('decision/{submission}', [ChallengeReviewController::class, 'makeDecision'])->name('decision.make');
     });
+
 });
 
 // Challenge participation routes - Available to all authenticated users
