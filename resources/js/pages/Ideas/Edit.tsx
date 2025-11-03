@@ -7,6 +7,7 @@ import { BreadcrumbItem } from '@/types';
 import ideasRoutes from '@/routes/ideas';
 import { toast } from 'react-toastify';
 import DeleteModal from '@/components/DeleteModal';
+import { error } from 'console';
 
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -197,7 +198,9 @@ export default function Edit() {
                 }
             },
             onError: () => {
-                toast.error('Failed to update idea. Please check your input and try again.');
+                // log the exact error for debugging
+                // console.log('Error updating idea:', form.errors);
+                toast.error('Failed to update idea. Please check your input and try again.',);
             },
         });
     }
