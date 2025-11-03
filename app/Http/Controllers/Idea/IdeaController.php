@@ -31,9 +31,15 @@ class IdeaController extends Controller
     {
         return redirect()->route($route, $params)->with($type, $message);
     }
+
     // index, show, create, store, edit, update, destroy methods would go here
     public function index(Request $request)
     {
+        // if user does not have permission to manage.own-ideas, to previous url and flash a message
+        if (!auth()->user()->can('manage.own-ideas')) {
+            return $this->flashMessage('You do not have permission to manage your own ideas.', 'error');
+        }
+
         // fetch and return a list of ideas
         $user = auth()->user();
         $likedIdeaIds = [];
@@ -169,17 +175,33 @@ class IdeaController extends Controller
         if (!$idea) {
             return $this->flashMessageToRoute('ideas.index', 'Idea not found.', [], 'error');
         }
+
+        // Check if user can view this specific idea using the policy
+        if (!auth()->user()->can('view', $idea)) {
+            return $this->flashMessage('You do not have permission to view this idea.', 'error');
+        }
+
         return Inertia::render('Ideas/Show', compact('idea'));
     }
 
     public function create()
     {
+        // Check if user can create a new idea
+        if (!auth()->user()->can('create.ideas')) {
+            return $this->flashMessage('You do not have permission to create a new idea.', 'error');
+        }
+
         $thematicAreas = ThematicArea::active()->ordered()->get(['id', 'name']);
         return Inertia::render('Ideas/Create', compact('thematicAreas'));
     }
 
     public function store(Request $request)
     {
+        // Check if user can create a new idea
+        if (!auth()->user()->can('create.ideas')) {
+            return $this->flashMessage('You do not have permission to create a new idea.', 'error');
+        }
+
         $rules = [
             'idea_title' => 'required|string|min:10|max:50',
             'thematic_area_id' => 'required|integer|exists:thematic_areas,id',
@@ -250,7 +272,7 @@ class IdeaController extends Controller
         }
         
         // Authorization check using gate
-        if (!auth()->user()->can('edit-idea', $idea)) {
+        if (!auth()->user()->can('edit.own-ideas', $idea)) {
             return $this->flashMessageToRoute('ideas.index', 'You do not have permission to edit this idea.', [], 'error');
         }
         
@@ -266,8 +288,8 @@ class IdeaController extends Controller
         }
         
         // Authorization check using gate
-        if (!auth()->user()->can('edit-idea', $idea)) {
-            return response()->json(['message' => 'You do not have permission to edit this idea'], 403);
+        if (!auth()->user()->can('edit.own-ideas', $idea)) {
+            return $this->flashMessage('You do not have permission to update this idea.', 'error');
         }
 
         $rules = [
@@ -544,7 +566,7 @@ class IdeaController extends Controller
         }
 
         // Authorization check using gate
-        if (!$user->can('delete-idea', $idea)) {
+        if (!$user->can('soft-delete.own-idea', $idea)) {
             return response()->json(['message' => 'You do not have permission to delete this idea'], 403);
         }
 
