@@ -122,6 +122,8 @@ class RolePermissionSeeder extends Seeder
             // Any Ideas
             'edit.any-ideas', //no one should have this permission except admins
             'view.any-ideas', //no one should have this permission except admins
+            'view.any-ideasAdmin', //admin level view permission
+            'view.any-ideasReviewers', //reviewer level view permission
             'soft-delete.any-ideas', //no one should have this permission except admins
             'permanent-delete.any-ideas', //no one should have this permission except admins
             'restore.any-ideas', //no one should have this permission except admins
@@ -213,6 +215,9 @@ class RolePermissionSeeder extends Seeder
             'permanent-delete.own-ideas',
             'restore.own-ideas',
 
+            // Any Ideas
+            'view.any-ideasReviewers',
+
             // Challenge management
             'manage.challenges',
             'create.challenges',
@@ -235,6 +240,9 @@ class RolePermissionSeeder extends Seeder
         $boardRole->givePermissionTo([
             // Review Stats
             'idea-review-stats',
+
+            // Any Ideas
+            'view.any-ideasReviewers',
 
             'review.ideas-stage2',
             'comment.on-ideas',
@@ -261,6 +269,9 @@ class RolePermissionSeeder extends Seeder
         $smeRole->givePermissionTo([
             // Review Stats
             'idea-review-stats',
+
+            // Any Ideas
+            'view.any-ideasReviewers',
 
             'review.ideas-stage1',
             'comment.on-ideas',
