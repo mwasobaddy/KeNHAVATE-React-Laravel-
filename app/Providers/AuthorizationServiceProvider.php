@@ -6,9 +6,19 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Idea;
 use App\Models\CollaborationProposal;
+use App\Policies\IdeaPolicy;
 
 class AuthorizationServiceProvider extends ServiceProvider
 {
+    /**
+     * The policy mappings for the application.
+     *
+     * @var array<class-string, class-string>
+     */
+    protected $policies = [
+        Idea::class => IdeaPolicy::class,
+    ];
+
     /**
      * Register services.
      */
