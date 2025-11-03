@@ -6,8 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 import { register } from '@/routes';
-import { store } from '@/routes/login';
-import { request } from '@/routes/password';
 import { google } from '@/routes/auth';
 import { Form, Head } from '@inertiajs/react';
 import { Mail, Chrome } from 'lucide-react';
